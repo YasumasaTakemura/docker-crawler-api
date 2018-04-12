@@ -1,0 +1,5 @@
+.python-version
+.pytest_cache/
+*.log
+*.env
+__pycache__/
