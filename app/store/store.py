@@ -1,4 +1,5 @@
 from google.cloud import storage
+from google.api_core.exceptions import Forbidden
 import base64
 from flask import abort
 from google.api_core.exceptions import Conflict
@@ -56,24 +57,23 @@ class Store(object):
         return res
 
     def write(self,bucket_name,enc_key,filename,data):
-        bucket = self.client.get_bucket(bucket_name)
         # Encryption key must be an AES256 key represented as a bytestring with
         # 32 bytes. Since it's passed in as a base64 encoded string, it needs
         # to be decoded.
-        encryption_key = base64.b64decode(enc_key)
-        blob = storage.Blob(filename, bucket,encryption_key=encryption_key)
+        try:
+            bucket = self.client.get_bucket(bucket_name)
+        except Forbidden as e:
+            raise Forbidden(str(e))
+        blob = storage.Blob(filename, bucket,encryption_key=enc_key)
         data = bz2.compress(data.encode(), 9)
         try:
-            blob.upload_from_string(data,content_type='application/gzip')
-            return True
+            res = blob.upload_from_string(data,content_type='application/gzip')
+            return '/{}/{}'.format(bucket_name,filename)
         except Exception as e:
             return e
 
     def read(self,bucket_name,enc_key,filename):
         bucket = self.client.get_bucket(bucket_name)
-        # Encryption key must be an AES256 key represented as a bytestring with
-        # 32 bytes. Since it's passed in as a base64 encoded string, it needs
-        # to be decoded.
         encryption_key = base64.b64decode(enc_key)
         blob = storage.Blob(filename, bucket, encryption_key=encryption_key)
         data = blob.download_to_filename(filename)

@@ -5,16 +5,18 @@ from main import app
 import os
 import base64
 import mock
-from app.utils.utils import get_enckey,decrypt_key
+from app.utils.utils import get_enckey, decrypt_key
 from google.cloud import storage
 from app.store.store import Store
 import requests
 from six.moves import http_client
 
+
 def _make_credentials():
     import google.auth.credentials
 
     return mock.Mock(spec=google.auth.credentials.Credentials)
+
 
 def _make_response(status=http_client.OK, content=b'', headers={}):
     response = requests.Response()
@@ -23,6 +25,7 @@ def _make_response(status=http_client.OK, content=b'', headers={}):
     response.headers = headers
     response.request = requests.Request()
     return response
+
 
 def _make_json_response(data, status=http_client.OK, headers=None):
     headers = headers or {}
@@ -39,34 +42,30 @@ def _make_requests_session(responses):
     return session
 
 
-class TestDB(unittest.TestCase):
+class TestVIew(unittest.TestCase):
     def setUp(self):
-        pass
-        # client = storage.Client('PROJECT')
-        # print(client)
-
+        app.config['TEST'] = True
+        self.app = app.test_client()
 
     def tearDown(self):
-       pass
-
-    def test_connection(self):
         pass
 
-    def test_encrypt_key(self):
-        enc_key = get_enckey()
-        if not enc_key :
-            enc_key = '3bXx72KXc3oWJ+CEDo7CM0anvBTryklFlOWAMp5QzNE='
-        enc_key = base64.b64decode(enc_key)
-        assert len(enc_key) == 32, 'Returned key should be 32 bytes'
-
-    def test_decrypt_key(self):
-        enc_key = get_enckey()
-        key = decrypt_key(enc_key)
-        assert len(key) == 32, 'Returned key should be 32 bytes'
 
     def test_write_gcs(self):
-        store = Store()
-
+        url='upload_file'
+        bucket_name = os.getenv('BUCKET_NAME')
+        if not bucket_name:
+            bucket_name = 'test-bucket-name'
+        filename = 'Category_Review-filename'
+        data = 'hello,world!!'
+        payload = {
+            'bucket_name':bucket_name,
+            'filename':filename,
+            'data':data,
+        }
+        res = self.app.post(url,data=payload)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data, '/{}/{}'.format(bucket_name,filename).encode())
 
 
 if __name__ == '__main__':

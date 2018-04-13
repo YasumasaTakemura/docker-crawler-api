@@ -2,19 +2,21 @@
 
 set -e
 
+flg=$#
 SOURCE_IMAGE=$1
 PROJECT_ID=yasu-xxx-training-sandbox
 
 usage_exit() {
-        if [ -z $SOURCE_IMAGE ];then
-            echo "Usage: $0 -s SOURCE_IMAGE [-p PROJECT_ID ] ..." 1>&2
+        if [  $flg -eq  0 ] || [ -z $SOURCE_IMAGE ];then
+            echo "Usage: bash $0 -s <SOURCE_IMAGE> [-p <PROJECT_ID> ] ..." 1>&2
             exit 1
         fi
-
-
 }
 
+# validation
+usage_exit
 
+# check args
 while getopts p:s:h OPT
 do
     case $OPT in

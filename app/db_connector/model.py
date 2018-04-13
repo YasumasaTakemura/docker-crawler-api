@@ -9,6 +9,9 @@ import datetime
 from flask import abort
 
 
+base_dir = '$PWD/app/db_connector'
+
+
 def read_query(filename):
     ext = '.sql'
     if not filename.endswith(ext):
@@ -45,6 +48,7 @@ class DBConnector(object):
         return cls._instance
 
     def _start_connection(self):
+        """ start connect DB"""
         user = os.environ.get('PG_USER')
         password = os.getenv('PG_PASSWORD')
         host = os.getenv('PG_HOST')
@@ -57,6 +61,7 @@ class DBConnector(object):
         )
 
     def commit(self, query):
+        """ do execute and commit at once """
         self.cur.execute(query)
         try:
             self.conn.commit()
@@ -77,31 +82,29 @@ class DBConnector(object):
 
 
 class DDL(object):
-    base_dir = './app/db_connector'
-
     def __init__(self, db):
         self.db = db
 
     def create_table_crawler(self, table='crawler'):
-        query = read_query(self.base_dir + '/sql/create_table_crawler.sql')
+        query = read_query(base_dir + '/sql/create_table_crawler.sql')
         result = self.db.commit(query)
         return result
 
     def _drop_table(self, table='crawler'):
         """ use ONLY FOR unittest """
-        query = read_query(self.base_dir + '/sql/drop_table_crawler.sql')
+        query = read_query(base_dir + '/sql/drop_table_crawler.sql')
         result = self.db.commit(query)
 
 
 class DML(object):
-    base_dir = './app/db_connector'
-
     def __init__(self, db):
         self.db = db
         self.cur = db.cur
 
     def push_paths(self, items):
         # type : (List[Dict[Any]]) => ()
+        """ insert path extracted from html　"""
+
         values = ''
         for i, item in enumerate(items):
             value = "({},{},{},{},{},{})".format(
@@ -117,25 +120,26 @@ class DML(object):
             if i != len(items) - 1:
                 value += ', '
             values += value
-        query = read_query(self.base_dir + '/sql/bulk_insert.sql')
+        query = read_query(base_dir + '/sql/bulk_insert.sql')
         query = query.replace('@items', values)
         return self.db.commit(query)
 
     def show(self):
         # type : () => (str)
-        query = read_query(self.base_dir + '/sql/show_all_records.sql')
+        query = read_query(base_dir + '/sql/show_all_records.sql')
         self.cur.execute(query)
         return self.cur.fetchall()
 
     def get_next_path(self):
         # type : () => (str)
-        query = read_query(self.base_dir + '/sql/get_next_url.sql')
+        query = read_query(base_dir + '/sql/get_next_url.sql')
         self.cur.execute(query)
         return self.cur.fetchone()[0]
 
     def apply_fields(self, urls):
         # type : (List[str]) => (List[str])
-        with open(self.base_dir + '/schema/crawler.json') as f:
+        # generate record ruled by schema
+        with open(base_dir + '/schema/crawler.json') as f:
             file = f.read()
             template = json.loads(file)
 

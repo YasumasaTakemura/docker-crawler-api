@@ -1,11 +1,11 @@
-
 import logging
 import os
+from app.utils.utils import get_enckey,decrypt_key
 from flask import request, Blueprint, abort, jsonify
 from .model import DBConnector, DML, DDL
 from app.store.store import Store
 
-app = Blueprint('db', __name__, url_prefix=os.getenv('VERSION'))
+app = Blueprint('db', __name__, url_prefix=os.getenv('API_VERSION'))
 
 
 @app.route('/', methods=['GET'])
@@ -52,7 +52,7 @@ def push_urls():
     dml = DML(db)
     records = dml.apply_fields(paths)
     if dml.push_paths(records):
-        return 'paths added', 200
+        return jsonify(data=records), 200
     logging.error('could not push urls')
     abort(400, 'could not push urls')
 
@@ -74,7 +74,8 @@ def upload_file():
     filename = data.get('filename')
     data = data.get('data')
     store = Store()
-    res = store.write(bucket_name=bucket_name,enc_key=os.getenv('SECRET'),filename=filename,data=data)
-    if res:
-        return '/' + bucket_name + '/' + filename , 200
-    abort(400, 'file was not uploaded')
+    enc_key = decrypt_key(get_enckey())
+    if not enc_key:
+        abort(400,'no SECRET key')
+    filename = store.write(bucket_name=bucket_name, enc_key=enc_key, filename=filename, data=data)
+    return filename, 200
