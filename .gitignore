@@ -10,9 +10,8 @@ __pycache__/
 
 #original
 *.log
-.env
 secret.*
-
+.idea/
 
 # Distribution / packaging
 .Python
@@ -92,7 +91,6 @@ celerybeat-schedule
 # virtualenv
 .venv
 venv/
-env/
 
 # Spyder project settings
 .spyderproject
