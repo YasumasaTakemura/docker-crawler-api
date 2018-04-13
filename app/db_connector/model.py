@@ -48,7 +48,7 @@ class DBConnector(object):
         user = os.environ.get('PG_USER')
         password = os.getenv('PG_PASSWORD')
         host = os.getenv('PG_HOST')
-        if all([user, password, host]):
+        if not all([user, password, host]):
             abort(400, 'check required variables are set')
         return psycopg2.connect(
             user=user,

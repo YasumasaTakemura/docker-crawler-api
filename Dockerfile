@@ -10,13 +10,15 @@ RUN apt update && \
 COPY ./ /src
 
 # python
-RUN pip install -r src/requirements.txt
+RUN pip install -r /src/requirements.txt
 
 # uwsgi
 RUN touch /src/reload.trigger && \
     if [ ! -d "/var/log/uwsgi" ] ; then mkdir /var/log/uwsgi ; fi
 
-WORKDIR src
+WORKDIR /src
+
+RUN ls app
 
 EXPOSE 80 8080
 
