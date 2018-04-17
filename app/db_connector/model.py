@@ -7,14 +7,10 @@ from psycopg2 import ProgrammingError, IntegrityError
 import json
 import datetime
 from flask import abort
+logger = logging.getLogger('DB_Model')
 
 
-<<<<<<< HEAD
-base_dir = '$PWD/app/db_connector'
-=======
 base_dir = '{}/app/db_connector'.format(os.getcwd())
->>>>>>> 67a4f97a923dd3844104970ef6b1dad2de685fb3
-
 
 def read_query(filename):
     ext = '.sql'
@@ -137,6 +133,13 @@ class DML(object):
     def get_next_path(self):
         # type : () => (str)
         query = read_query(base_dir + '/sql/get_next_url.sql')
+        self.cur.execute(query)
+        return self.cur.fetchone()[0]
+
+    def update_crawled_status(self,path):
+        # type : () => (str)
+        query = read_query(base_dir + '/sql/update_crawled_status.sql')
+        query = query.replace('@path', path)
         self.cur.execute(query)
         return self.cur.fetchone()[0]
 

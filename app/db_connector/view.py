@@ -5,6 +5,7 @@ from flask import request, Blueprint, abort, jsonify
 from .model import DBConnector, DML, DDL
 from app.store.store import Store
 
+logger = logging.getLogger('DB_View')
 app = Blueprint('db', __name__, url_prefix=os.getenv('API_VERSION'))
 
 
@@ -21,7 +22,7 @@ def create_table():
         ddl.create_table_crawler()
         return 'table created', 200
     except Exception as e:
-        logging.error(e)
+        logger.error(e)
         abort(400, 'no tables created')
 
 
@@ -33,7 +34,7 @@ def show_records():
         res = dml.show()
         return jsonify(data=res)
     except Exception as e:
-        logging.error(e)
+        logger.error(e)
         abort(400, 'no tables created')
 
 
@@ -53,7 +54,7 @@ def push_urls():
     records = dml.apply_fields(paths)
     if dml.push_paths(records):
         return jsonify(data=records), 200
-    logging.error('could not push urls')
+    logger.error('could not push urls')
     abort(400, 'could not push urls')
 
 
@@ -73,6 +74,8 @@ def upload_file():
     bucket_name = data.get('bucket_name')
     filename = data.get('filename')
     data = data.get('data')
+    logger.info('/{}/{}'.format(bucket_name,filename))
+
     store = Store()
     enc_key = decrypt_key(get_enckey())
     if not enc_key:

@@ -44,7 +44,7 @@ def _make_requests_session(responses):
 
 class TestVIew(unittest.TestCase):
     def setUp(self):
-        app.config['TEST'] = True
+        app.config['TESTING'] = True
         self.app = app.test_client()
 
     def tearDown(self):
@@ -56,7 +56,7 @@ class TestVIew(unittest.TestCase):
         bucket_name = os.getenv('BUCKET_NAME')
         if not bucket_name:
             bucket_name = 'test-bucket-name'
-        filename = 'Category_Review-filename'
+        filename = 'Hotel_Review-g308257-d2071436-Reviews-Mana_Lagoon_Backpackers-Mana_Island_Mamanuca_Islands'
         data = 'hello,world!!'
         payload = {
             'bucket_name':bucket_name,

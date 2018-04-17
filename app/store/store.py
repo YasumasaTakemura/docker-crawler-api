@@ -67,7 +67,7 @@ class Store(object):
         blob = storage.Blob(filename, bucket,encryption_key=enc_key)
         data = bz2.compress(data.encode(), 9)
         try:
-            res = blob.upload_from_string(data,content_type='application/gzip')
+            blob.upload_from_string(data,content_type='application/gzip')
             return '/{}/{}'.format(bucket_name,filename)
         except Exception as e:
             return e
