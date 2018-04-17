@@ -79,9 +79,9 @@ def upload_file():
     logger.info('/{}/{}'.format(bucket_name,filename))
 
     store = Store()
-    enc_key = decrypt_key(get_enckey())
-    if not enc_key:
-        logger.error('no SECRET key')
-        abort(400,'')
-    filename = store.write(bucket_name=bucket_name, enc_key=enc_key, filename=filename, data=data)
+    # enc_key = decrypt_key(get_enckey())
+    # if not enc_key:
+    #     logger.error('no SECRET key')
+    #     abort(400,'')
+    filename = store.write(bucket_name=bucket_name, filename=filename, data=data)
     return filename, 200

@@ -140,8 +140,9 @@ class DML(object):
         # type : () => (str)
         query = read_query(base_dir + '/sql/update_crawled_status.sql')
         query = query.replace('@path', path)
-        self.cur.execute(query)
-        return self.cur.fetchone()[0]
+        print(query)
+        # self.cur.execute(query)
+        # return self.cur.fetchone()[0]
 
     def apply_fields(self, urls):
         # type : (List[str]) => (List[str])

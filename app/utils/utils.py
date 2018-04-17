@@ -5,8 +5,6 @@ import logging
 
 logger = logging.getLogger('LoggingUnitTest')
 logger.setLevel(logging.INFO)
-fh = logging.FileHandler('test.log')
-logger.addHandler(fh)
 
 def get_enckey():
     key = os.getenv('SECRET')

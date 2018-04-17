@@ -1,23 +1,26 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-from datetime import datetime
 from flask import Flask
 import google.cloud.logging
 from app.db_connector import view as db
 
 app = Flask(__name__)
-app.config['PROJECT_ID'] = os.getenv('PROJECT_ID')
+# app.config['PROJECT_ID'] = os.getenv('PROJECT_ID')
 
+client = google.cloud.logging.Client()
+client.setup_logging(logging.INFO)
 logger = logging.getLogger('LoggingTest')
 logger.setLevel(logging.INFO)
 
-if not app.testing :
-    client = google.cloud.logging.Client(app.config['PROJECT_ID'])
-    client.setup_logging(logging.INFO)
-else:
-    fh = logging.FileHandler('test.log')
-    logger.addHandler(fh)
+# if not app.testing :
+#
+# else:
+#     logger = logging.getLogger('LoggingTest')
+#     logger.setLevel(logging.INFO)
+#     fh = logging.FileHandler('test.log')
+#     logger.addHandler(fh)
+
 
 
 modules_define = [db.app]
