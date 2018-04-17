@@ -6,6 +6,7 @@ from .model import DBConnector, DML, DDL
 from app.store.store import Store
 
 logger = logging.getLogger('DB_View')
+
 app = Blueprint('db', __name__, url_prefix=os.getenv('API_VERSION'))
 
 
@@ -65,7 +66,8 @@ def create_bucket():
     bucket_name = store.create_bucket(bucket_name=bucket_name)
     if bucket_name:
         return bucket_name, 200
-    abort(400, 'bucket was not created')
+    logger.error('bucket was not created')
+    abort(400, '')
 
 
 @app.route('/upload_file', methods=['POST'])
@@ -79,6 +81,7 @@ def upload_file():
     store = Store()
     enc_key = decrypt_key(get_enckey())
     if not enc_key:
-        abort(400,'no SECRET key')
+        logger.error('no SECRET key')
+        abort(400,'')
     filename = store.write(bucket_name=bucket_name, enc_key=enc_key, filename=filename, data=data)
     return filename, 200

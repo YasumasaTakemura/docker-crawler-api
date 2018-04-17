@@ -42,7 +42,8 @@ def _make_requests_session(responses):
 
 class TestDB(unittest.TestCase):
     def setUp(self):
-        app.config['TESTING'] = True
+        pass
+        # app.config['TESTING'] = True
         # client = storage.Client('PROJECT')
         # print(client)
 

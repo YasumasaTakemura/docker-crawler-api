@@ -4,6 +4,9 @@ import base64
 from flask import abort
 from google.api_core.exceptions import Conflict
 import bz2
+import logging
+
+logger = logging.getLogger('Store_model')
 
 class Store(object):
     """singleton"""
@@ -18,25 +21,35 @@ class Store(object):
         return cls._instance
 
     def connect(self):
-        self.client = storage.Client()
+        try:
+            self.client = storage.Client()
+        except Exception as e:
+            logger.error(str(e))
 
     def create_bucket(self,bucket_name):
         try:
             bucket = self.client.create_bucket(bucket_name)
             return bucket.name
         except Conflict as e :
-            abort(400,e)
+            logger.error(e)
+            abort(400,'')
 
     def delete_bucket(self,bucket_name):
         """Deletes a bucket. The bucket must be empty."""
         bucket = self.client.get_bucket(bucket_name)
         bucket.delete()
+        logger.error('Bucket {} deleted'.format(bucket.name))
         print('Bucket {} deleted'.format(bucket.name))
 
     def list_blobs(self,bucket_name):
         """Lists all the blobs in the bucket."""
         # type : (str)=> (list)
-        bucket = self.client.get_bucket(bucket_name)
+        try:
+            bucket = self.client.get_bucket(bucket_name)
+        except Exception as e:
+            logger.error(e)
+            raise Exception(str(e))
+
         blobs = bucket.list_blobs()
         res = []
         for blob in blobs:
@@ -63,6 +76,7 @@ class Store(object):
         try:
             bucket = self.client.get_bucket(bucket_name)
         except Forbidden as e:
+            logger.error(e)
             raise Forbidden(str(e))
         blob = storage.Blob(filename, bucket,encryption_key=enc_key)
         data = bz2.compress(data.encode(), 9)
@@ -70,7 +84,8 @@ class Store(object):
             blob.upload_from_string(data,content_type='application/gzip')
             return '/{}/{}'.format(bucket_name,filename)
         except Exception as e:
-            return e
+            logger.error(e)
+            raise Exception(e)
 
     def read(self,bucket_name,enc_key,filename):
         bucket = self.client.get_bucket(bucket_name)
