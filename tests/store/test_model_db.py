@@ -2,6 +2,7 @@
 import unittest
 import json
 from main import app
+
 import os
 import base64
 import mock
@@ -66,8 +67,6 @@ class TestDB(unittest.TestCase):
 
     def test_write_gcs(self):
         store = Store()
-
-
 
 if __name__ == '__main__':
     unittest.main()

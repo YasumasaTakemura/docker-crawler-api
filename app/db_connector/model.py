@@ -9,7 +9,11 @@ import datetime
 from flask import abort
 
 
+<<<<<<< HEAD
 base_dir = '$PWD/app/db_connector'
+=======
+base_dir = '{}/app/db_connector'.format(os.getcwd())
+>>>>>>> 67a4f97a923dd3844104970ef6b1dad2de685fb3
 
 
 def read_query(filename):

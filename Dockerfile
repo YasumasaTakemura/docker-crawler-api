@@ -1,10 +1,10 @@
-FROM ubuntu
+FROM ubuntu:latest
 
-RUN apt update && \
-    apt install --yes python3 python3-pip && \
-    apt clean && \
-    ln -s /usr/bin/python3 /usr/bin/python && \
-    ln -s /usr/bin/pip3 /usr/bin/pip
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip && \
+    apt-get clean && \
+    ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
 
 # crawler application
 COPY ./ /src

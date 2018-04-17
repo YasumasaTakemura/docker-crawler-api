@@ -15,7 +15,6 @@ settings.load_dotenv()
 # _logger.addHandler(fh)
 # logger = _logger
 
-
 app = Flask(__name__)
 app.config['PROJECT_ID'] = os.getenv('PROJECT_ID')
 
