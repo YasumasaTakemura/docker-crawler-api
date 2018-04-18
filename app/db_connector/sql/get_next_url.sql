@@ -1,7 +1,7 @@
 SELECT
     path
 FROM
-    crawler
+    @table
 WHERE
     crawled = FALSE
 ORDER BY

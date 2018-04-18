@@ -6,11 +6,11 @@ import psycopg2
 from psycopg2 import ProgrammingError, IntegrityError
 import json
 import datetime
-from flask import abort
+
 logger = logging.getLogger('DB_Model')
 
-
 base_dir = '{}/app/db_connector'.format(os.getcwd())
+
 
 def read_query(filename):
     ext = '.sql'
@@ -33,6 +33,8 @@ def validate(value):
     return value
 
 
+# todo:create decolator for
+
 class DBConnector(object):
     """singleton"""
     _instance = None
@@ -52,33 +54,34 @@ class DBConnector(object):
         user = os.environ.get('PG_USER')
         password = os.getenv('PG_PASSWORD')
         host = os.getenv('PG_HOST')
+        database = os.environ.get('DATABASE_NAME')
         if not all([user, password, host]):
-            abort(400, 'check required variables are set')
+            logger.error('check required variables are set')
+            raise ValueError('check required variables are set')
         return psycopg2.connect(
             user=user,
             password=password,
             host=host,
+            database=database,
         )
 
     def commit(self, query):
         """ do execute and commit at once """
-        self.cur.execute(query)
         try:
+            self.cur.execute(query)
             self.conn.commit()
             return True
         except IntegrityError:
             # in case record is duplicated
             return True
         except ProgrammingError as e:
-            logging.error(e)
-            self.cur.close()
-            self.conn.close()
-            abort(400, e)
+            self.conn.rollback()
+            logger.error(e)
         except Exception as e:
             logging.error(e)
             self.cur.close()
             self.conn.close()
-            abort(400, e)
+            raise e
 
 
 class DDL(object):
@@ -86,7 +89,8 @@ class DDL(object):
         self.db = db
 
     def create_table_crawler(self, table='crawler'):
-        query = read_query(base_dir + '/sql/create_table_crawler.sql')
+        _query = read_query(base_dir + '/sql/create_table_crawler.sql')
+        query = _query.replace('@table', table)
         result = self.db.commit(query)
         return result
 
@@ -97,13 +101,18 @@ class DDL(object):
 
 
 class DML(object):
+    base_table = 'crawler'
+
     def __init__(self, db):
         self.db = db
         self.cur = db.cur
 
-    def push_paths(self, items):
+    def push_paths(self, items, table='crawler'):
         # type : (List[Dict[Any]]) => ()
-        """ insert path extracted from html　"""
+        """
+        insert path extracted from html　
+        this function is called after "apply_fields"
+        """
 
         values = ''
         for i, item in enumerate(items):
@@ -120,33 +129,45 @@ class DML(object):
             if i != len(items) - 1:
                 value += ', '
             values += value
-        query = read_query(base_dir + '/sql/bulk_insert.sql')
-        query = query.replace('@items', values)
+        _query = read_query(base_dir + '/sql/bulk_insert.sql')
+        _query = _query.replace('@items', values)
+        query = _query.replace('@table', table)
         return self.db.commit(query)
 
-    def show(self):
+    def show(self, table=base_table):
         # type : () => (str)
-        query = read_query(base_dir + '/sql/show_all_records.sql')
+        sql = '/sql/show_all_records.sql'
+        query_path = base_dir + sql
+        _query = read_query(query_path)
+        query = _query.replace('@table', table)
         self.cur.execute(query)
         return self.cur.fetchall()
 
-    def get_next_path(self):
+    def get_next_path(self, table=base_table):
         # type : () => (str)
-        query = read_query(base_dir + '/sql/get_next_url.sql')
+        sql = '/sql/get_next_url.sql'
+        query_path = base_dir + sql
+        _query = read_query(query_path)
+        query = _query.replace('@table', table)
         self.cur.execute(query)
-        return self.cur.fetchone()[0]
+        try:
+            return self.cur.fetchone()[0]
+        except IndexError as e:
+            logger.error(e)
+            raise IndexError(e)
 
-    def update_crawled_status(self,path):
+    def update_crawled_status(self, path, table=base_table):
         # type : () => (str)
-        query = read_query(base_dir + '/sql/update_crawled_status.sql')
-        query = query.replace('@path', path)
-        print(query)
-        # self.cur.execute(query)
-        # return self.cur.fetchone()[0]
+        sql = '/sql/update_crawled_status.sql'
+        query_path = base_dir + sql
+        _query = read_query(query_path)
+        _query = _query.replace('@path', path)
+        query = _query.replace('@table', table)
+        return self.db.commit(query)
 
     def apply_fields(self, urls):
         # type : (List[str]) => (List[str])
-        # generate record ruled by schema
+        # generate record ruled by schema/crawler.json
         with open(base_dir + '/schema/crawler.json') as f:
             file = f.read()
             template = json.loads(file)

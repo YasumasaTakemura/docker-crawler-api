@@ -1,7 +1,7 @@
 SELECT
     *
 FROM
-    crawler
+    @table
 WHERE
     crawled = FALSE
 ORDER BY

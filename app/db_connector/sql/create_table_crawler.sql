@@ -1,5 +1,5 @@
-CREATE TABLE crawler (
-  path  TEXT,
+CREATE TABLE @table (
+  path  TEXT NOT NULL PRIMARY KEY,
   crawled BOOL,
   stored BOOL,
   crawled_at TIMESTAMP,

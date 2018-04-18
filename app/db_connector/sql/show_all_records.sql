@@ -1,6 +1,6 @@
 SELECT
     *
 FROM
-    crawler
+    @table
 ORDER BY
     created_at

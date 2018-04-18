@@ -1,4 +1,4 @@
-INSERT INTO crawler (
+INSERT INTO @table (
   path,
   crawled,
   stored,

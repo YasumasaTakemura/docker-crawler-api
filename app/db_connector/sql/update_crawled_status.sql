@@ -1,3 +1,3 @@
-UPDATE crawler
+UPDATE @table
 SET crawled = TRUE
 WHERE path = '@path'

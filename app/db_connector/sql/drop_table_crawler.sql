@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS crawler ;
+DROP TABLE IF EXISTS @table ;
