@@ -33,7 +33,11 @@ def validate(value):
     return value
 
 
-# todo:create decolator for
+def replace_table_name(table, sql):
+    query_path = base_dir + sql
+    _query = read_query(query_path)
+    return _query.replace('@table', table)
+
 
 class DBConnector(object):
     """singleton"""
@@ -129,26 +133,22 @@ class DML(object):
             if i != len(items) - 1:
                 value += ', '
             values += value
-        _query = read_query(base_dir + '/sql/bulk_insert.sql')
-        _query = _query.replace('@items', values)
-        query = _query.replace('@table', table)
+        sql = '/sql/bulk_insert.sql'
+        _query = replace_table_name(table,sql)
+        query = _query.replace('@items', values)
         return self.db.commit(query)
 
     def show(self, table=base_table):
         # type : () => (str)
         sql = '/sql/show_all_records.sql'
-        query_path = base_dir + sql
-        _query = read_query(query_path)
-        query = _query.replace('@table', table)
+        query = replace_table_name(table,sql)
         self.cur.execute(query)
         return self.cur.fetchall()
 
     def get_next_path(self, table=base_table):
         # type : () => (str)
         sql = '/sql/get_next_url.sql'
-        query_path = base_dir + sql
-        _query = read_query(query_path)
-        query = _query.replace('@table', table)
+        query = replace_table_name(table,sql)
         self.cur.execute(query)
         try:
             return self.cur.fetchone()[0]
@@ -159,10 +159,8 @@ class DML(object):
     def update_crawled_status(self, path, table=base_table):
         # type : () => (str)
         sql = '/sql/update_crawled_status.sql'
-        query_path = base_dir + sql
-        _query = read_query(query_path)
-        _query = _query.replace('@path', path)
-        query = _query.replace('@table', table)
+        _query = replace_table_name(table,sql)
+        query = _query.replace('@path', path)
         return self.db.commit(query)
 
     def apply_fields(self, urls):

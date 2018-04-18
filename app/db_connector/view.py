@@ -80,3 +80,18 @@ def upload_file():
     store = Store()
     filename = store.write(bucket_name=bucket_name, filename=filename, data=data)
     return filename, 200
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    data = request.form
+    bucket_name = data.get('bucket_name')
+    path = data.get('filename')
+    data = data.get('data')
+    logger.info('{}'.format(path))
+    logger.info('/{}/{}'.format(bucket_name,path))
+    store = Store()
+    db = DBConnector()
+    dml = DML(db)
+    dml.update_crawled_status(path)
+    filename = store.write(bucket_name=bucket_name, filename=path, data=data)
+    return filename, 200
