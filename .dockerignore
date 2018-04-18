@@ -3,4 +3,5 @@
 *.log
 .local
 *.env
+.idea
 __pycache__/

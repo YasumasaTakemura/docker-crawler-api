@@ -1,7 +1,7 @@
 import logging
 import os
 from flask import request, Blueprint, abort, jsonify
-from .model import DBConnector, DML, DDL
+from .model import DBConnector, DMO, DDO
 from app.store.store import Store
 
 logger = logging.getLogger('DB_View')
@@ -18,9 +18,9 @@ def working():
 @app.route('/create_table', methods=['POST'])
 def create_table():
     db = DBConnector()
-    ddl = DDL(db)
+    ddo = DDO(db)
     try:
-        ddl.create_table_crawler()
+        ddo.create_table_crawler()
         return 'table created', 200
     except Exception as e:
         logger.error(e)
@@ -30,9 +30,9 @@ def create_table():
 @app.route('/show_records', methods=['GET'])
 def show_records():
     db = DBConnector()
-    dml = DML(db)
+    dmo = DMO(db)
     try:
-        res = dml.show(table=table_name)
+        res = dmo.show(table=table_name)
         return jsonify(data=res)
     except Exception as e:
         logger.error(e)
@@ -42,21 +42,24 @@ def show_records():
 @app.route('/get_next', methods=['GET'])
 def get_next():
     db = DBConnector()
-    dml = DML(db)
-    path = dml.get_next_path(table=table_name)
-    return path, 200
+    dmo = DMO(db)
+    path = dmo.get_next_path(table=table_name)
+    return path or '', 200
 
 
 @app.route('/push_paths', methods=['POST'])
 def push_urls():
     paths = request.form.getlist('path')
+    logger.info(paths)
     db = DBConnector()
-    dml = DML(db)
-    records = dml.apply_fields(paths)
-    if dml.push_paths(records,table=table_name):
+    dmo = DMO(db)
+    records = dmo.apply_fields(paths)
+    # logger.info('=================')
+    # logger.info(records)
+    if dmo.push_paths(records,table=table_name):
         return jsonify(data=records), 200
     logger.error('could not push urls')
-    abort(400, 'could not push urls')
+    abort(400, '')
 
 
 @app.route('/create_bucket', methods=['POST'])
@@ -76,7 +79,7 @@ def upload_file():
     bucket_name = data.get('bucket_name')
     filename = data.get('filename')
     data = data.get('data')
-    logger.info('/{}/{}'.format(bucket_name, filename))
+    # logger.info('/{}/{}'.format(bucket_name, filename))
     store = Store()
     filename = store.write(bucket_name=bucket_name, filename=filename, data=data)
     return filename, 200
@@ -88,11 +91,14 @@ def upload():
     bucket = data.get('bucket_name')
     path = data.get('path')
     data = data.get('data')
-    logger.info('{}'.format(path))
-    logger.info('/{}/{}'.format(bucket, path))
+    # logger.info('{}'.format(path))
+    # logger.info('/{}/{}'.format(bucket, path))
     store = Store()
     db = DBConnector()
-    dml = DML(db)
-    dml.update_crawled_status(path,table_name)
+    dmo = DMO(db)
+    dmo.update_crawled_status(path,table_name)
     filename = store.write(bucket_name=bucket, filename=path, data=data)
-    return filename, 200
+    if filename:
+        return filename, 200
+    logger.error('not uploaded')
+    abort(400,'')

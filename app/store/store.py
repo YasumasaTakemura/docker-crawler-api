@@ -86,7 +86,6 @@ class Store(object):
             return '/{}/{}'.format(bucket_name, filename)
         except Exception as e:
             logger.error(e)
-            raise Exception(e)
 
     def read(self, bucket_name, enc_key, filename):
         bucket = self.client.get_bucket(bucket_name)

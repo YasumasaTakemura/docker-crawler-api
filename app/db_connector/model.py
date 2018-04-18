@@ -6,8 +6,10 @@ import psycopg2
 from psycopg2 import ProgrammingError, IntegrityError
 import json
 import datetime
+import pytz
 
 logger = logging.getLogger('DB_Model')
+logger.setLevel(logging.DEBUG)
 
 base_dir = '{}/app/db_connector'.format(os.getcwd())
 
@@ -88,7 +90,7 @@ class DBConnector(object):
             raise e
 
 
-class DDL(object):
+class DDO(object):
     def __init__(self, db):
         self.db = db
 
@@ -104,7 +106,7 @@ class DDL(object):
         result = self.db.commit(query)
 
 
-class DML(object):
+class DMO(object):
     base_table = 'crawler'
 
     def __init__(self, db):
@@ -120,13 +122,10 @@ class DML(object):
 
         values = ''
         for i, item in enumerate(items):
-            value = "({},{},{},{},{},{})".format(
+            value = "({},{},{})".format(
                 validate(item['path']),
                 validate(item['crawled']),
                 validate(item['stored']),
-                validate(item['crawled_at']),
-                validate(item['created_at']),
-                validate(item['updated_at']),
             )
 
             # no comma at last value
@@ -134,32 +133,32 @@ class DML(object):
                 value += ', '
             values += value
         sql = '/sql/bulk_insert.sql'
-        _query = replace_table_name(table,sql)
-        query = _query.replace('@items', values)
+        ts = pytz.timezone('Asia/Tokyo').localize(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
+        _query = replace_table_name(table, sql)
+        _query = _query.replace('@timestamp', ts)
+        query = _query.replace('@values', values)
         return self.db.commit(query)
 
     def show(self, table=base_table):
         # type : () => (str)
         sql = '/sql/show_all_records.sql'
-        query = replace_table_name(table,sql)
+        query = replace_table_name(table, sql)
         self.cur.execute(query)
         return self.cur.fetchall()
 
     def get_next_path(self, table=base_table):
         # type : () => (str)
         sql = '/sql/get_next_url.sql'
-        query = replace_table_name(table,sql)
+        query = replace_table_name(table, sql)
         self.cur.execute(query)
-        try:
-            return self.cur.fetchone()[0]
-        except IndexError as e:
-            logger.error(e)
-            raise IndexError(e)
+        data = self.cur.fetchone()
+        if data:
+            return data[0]
 
     def update_crawled_status(self, path, table=base_table):
         # type : () => (str)
         sql = '/sql/update_crawled_status.sql'
-        _query = replace_table_name(table,sql)
+        _query = replace_table_name(table, sql)
         query = _query.replace('@path', path)
         return self.db.commit(query)
 
@@ -177,7 +176,7 @@ class DML(object):
                 if tmp['name'] == 'path':
                     tmp['value'] = url
                 if tmp['type'] == 'datetime' and tmp['value']:
-                    tmp['value'] = datetime.datetime.now()
+                    tmp['value'] = pytz.timezone('Asia/Tokyo').localize(datetime.datetime.now())
                 _tmp.update({tmp['name']: tmp['value']})
             urls__.append(_tmp)
         return urls__

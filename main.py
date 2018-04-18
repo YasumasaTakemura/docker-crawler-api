@@ -6,12 +6,14 @@ import google.cloud.logging
 from app.db_connector import view as db
 
 app = Flask(__name__)
-# app.config['PROJECT_ID'] = os.getenv('PROJECT_ID')
 
-client = google.cloud.logging.Client()
+client = google.cloud.logging.Client(os.environ.get('PROJECT_ID'))
+print(client._credentials)
 client.setup_logging(logging.INFO)
 logger = logging.getLogger('LoggingTest')
 logger.setLevel(logging.INFO)
+
+logger.info('entry')
 
 # if not app.testing :
 #
