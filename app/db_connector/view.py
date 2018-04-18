@@ -1,11 +1,11 @@
 import logging
 import os
-from app.utils.utils import get_enckey,decrypt_key
 from flask import request, Blueprint, abort, jsonify
 from .model import DBConnector, DML, DDL
 from app.store.store import Store
 
 logger = logging.getLogger('DB_View')
+table_name = os.environ.get('DATABASE_NAME') or 'crawler'
 
 app = Blueprint('db', __name__, url_prefix=os.getenv('API_VERSION'))
 
@@ -32,18 +32,18 @@ def show_records():
     db = DBConnector()
     dml = DML(db)
     try:
-        res = dml.show()
+        res = dml.show(table=table_name)
         return jsonify(data=res)
     except Exception as e:
         logger.error(e)
-        abort(400, 'no tables created')
+        abort(400, )
 
 
 @app.route('/get_next', methods=['GET'])
 def get_next():
     db = DBConnector()
     dml = DML(db)
-    path = dml.get_next_path()
+    path = dml.get_next_path(table=table_name)
     return path, 200
 
 
@@ -53,7 +53,7 @@ def push_urls():
     db = DBConnector()
     dml = DML(db)
     records = dml.apply_fields(paths)
-    if dml.push_paths(records):
+    if dml.push_paths(records,table=table_name):
         return jsonify(data=records), 200
     logger.error('could not push urls')
     abort(400, 'could not push urls')
@@ -76,22 +76,23 @@ def upload_file():
     bucket_name = data.get('bucket_name')
     filename = data.get('filename')
     data = data.get('data')
-    logger.info('/{}/{}'.format(bucket_name,filename))
+    logger.info('/{}/{}'.format(bucket_name, filename))
     store = Store()
     filename = store.write(bucket_name=bucket_name, filename=filename, data=data)
     return filename, 200
 
+
 @app.route('/upload', methods=['POST'])
-def upload_file():
+def upload():
     data = request.form
-    bucket_name = data.get('bucket_name')
-    path = data.get('filename')
+    bucket = data.get('bucket_name')
+    path = data.get('path')
     data = data.get('data')
     logger.info('{}'.format(path))
-    logger.info('/{}/{}'.format(bucket_name,path))
+    logger.info('/{}/{}'.format(bucket, path))
     store = Store()
     db = DBConnector()
     dml = DML(db)
-    dml.update_crawled_status(path)
-    filename = store.write(bucket_name=bucket_name, filename=path, data=data)
+    dml.update_crawled_status(path,table_name)
+    filename = store.write(bucket_name=bucket, filename=path, data=data)
     return filename, 200

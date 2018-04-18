@@ -12,6 +12,7 @@ __pycache__/
 *.log
 secret.*
 .idea/
+.local
 
 # Distribution / packaging
 .Python
