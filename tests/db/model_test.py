@@ -37,11 +37,13 @@ class TestDBConnection(unittest.TestCase):
             'Restaurant_Review-g298283-d10161810-Reviews-Kayu_Puti-Langkawi_Langkawi_District_Kedah',
             'Restaurant_Review-g308257-d6446731-Reviews-Southbeach_Restaurant-Mana_Island_Mamanuca_Islands',
             'Restaurant_Review-g308257-d13142558-Reviews-Mana_Lagoon_Restaurant-Mana_Island_Mamanuca_Islands',
-            'Restaurant_Review-g308261-d2485006-Reviews-Tokoriki_Oishii_Teppanyaki-Tokoriki_Island_Mamanuca_Islands'
+            'Hotel_Review-g297701-d506292-Reviews-m33762-COMO_Uma_Ubud_Bali-Ubud_Bali'
+
         ]
-        dml = DMO(self.db)
-        records = dml.apply_fields(path)
-        dml.push_paths(records, table=self.test_table)
-        data = dml.show(table=self.test_table)
+        dmo = DMO(self.db)
+        records = dmo.apply_fields(path)
+        dmo.push_paths(records, table=self.test_table)
+        dmo.update_crawled_status('Hotel_Review-g297701-d506292-Reviews-m33762-COMO_Uma_Ubud_Bali-Ubud_Bali', self.test_table)
+        data = dmo.show(table=self.test_table)
         for item in data:
             self.assertTrue(item[0] in path)
