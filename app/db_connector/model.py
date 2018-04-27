@@ -163,22 +163,18 @@ class FileDB(CacheFile):
             self.get_last_line()
 
         self.file_obj.seek(0, 0)
-        # before = (line for i, line in enumerate(self.file_obj) if i == index - 1)
 
-
-        def before(self):
+        with open(self.file_path + '_test', 'w') as f:
             for i, line in enumerate(self.file_obj):
-                yield line
+                f.write(line)
                 if i == index - 1:
                     break
 
-        self.file_obj.seek(index + 1)
-        after = self.file_obj.readlines()
-        with open(self.file_path + '_test', 'w') as f:
-            for line in before(self):
-                f.write(line)
-            for line in after:
-                f.write(line)
+
+        after = self.file_obj.readlines(index)
+        print(after)
+        with open(self.file_path + '_test', 'a') as f:
+            f.writelines(after)
 
     def get_until(self, index):
         import itertools
