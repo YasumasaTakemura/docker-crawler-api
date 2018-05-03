@@ -7,7 +7,8 @@ from psycopg2 import ProgrammingError, IntegrityError
 import json
 import datetime
 import pytz
-import numpy as np
+
+# import numpy as np
 
 logger = logging.getLogger('DB_Model')
 logger.setLevel(logging.DEBUG)
@@ -42,30 +43,43 @@ def replace_table_name(table, sql):
     return query.replace('@table', table)
 
 
-class CacheFile(object):
+class SingletonType(type):
+    _instance = None
+
+    def __call__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(SingletonType, cls).__call__(*args, **kwargs)
+        return cls._instance
+
+
+class CacheFile(metaclass=SingletonType):
     """
-    - Data structure of file need to be CSV or TSV
-    - Do Not write \n at Last line
+    This class a extension of Generator which will have len() and get(), and a SINGLETON to manage url queues
+    - Data structure of file needs to be CSV or TSV
 
     """
+    _instance = None
 
     def __init__(self, file_path):
         self.file_path = file_path
         self.size = os.path.getsize(self.file_path)
-
-        if not self.size:
-            raise ValueError('not None')
-
-        self.cache = self._gen_fileObj()
+        self.index_table = {}
+        self.cache = self._gen_cache()
         self.offset = 0
 
-    def _gen_fileObj(self):
-        self.file_obj = open(self.file_path)
-        logger.info('Pointer of file is passed')
-        return self.file_obj
+    def _gen_cache(self):
+        """
+        Generate cache
+        This cache will be used in each methods
+        Do not copy or generate list from this cache for memory efficiency
+        """
+        self.cache = open(self.file_path,'r+')
+        logger.info('List of Queue is now dumped and you got pointer of file')
+        return self.cache
 
-    def _fine_line(self, index):
-        print()
+    def __init(self):
+        """ init format or something """
+        pass
 
     def _find_last_line_index(self):
         size = self.size
@@ -79,11 +93,14 @@ class CacheFile(object):
 
     def get_last_line(self):
         offset = self._find_last_line_index()
-        self.file_obj.seek(offset)
-        return self.file_obj.readline()
+        self.cache.seek(offset)
+        return self.cache.readline()
 
     def __len__(self):
-        return sum(1 for _ in self.cache)
+        self.cache.seek(0, 0)
+        length = sum(1 for _ in self.cache)
+        # self.cache.seek(0, 0)
+        return length
 
     def __getitem__(self, index):
         if not isinstance(index, int):
@@ -99,88 +116,111 @@ class CacheFile(object):
                 return line.replace('\n', '')
 
 
-class FileDB(CacheFile):
-    """singleton"""
-    _instance = None
+class FileDB(object):
+    """
+    Steps
+    1. FileDB(filename)
+
+    """
 
     def __init__(self, file_path):
-        super().__init__(file_path)
+        self.conn = self._connect(file_path)
+        self.cache = self.conn.cache
+        self.size = self.conn.size
+        self._create_index_table()
 
-    def __new__(cls, file_path):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    # def incr(self):
-    #     self.records_cnt += 1
-    #
-    # def decr(self):
-    #     if self.records_cnt >= 0:
-    #         self.records_cnt -= 1
-
-    def connect(self):
-        self.fp = open(self.file_path)
-        logger.info('Pointer of file is passed')
-        return self.fp
+    @staticmethod
+    def _connect(file_path):
+        """ Connect to some object or DB driver"""
+        return CacheFile(file_path)
 
     def _read_all(self):
-        fp = self.fp
-        with fp as f:
-            return f.readlines()
+        """ dump all data as list """
+        return self.cache.readlines()
 
     def _find_by_path(self, path):
-        cache = self.cache
+        """ find specific line by key """
+        self.cache.seek(0, 0)
         for i in range(self.size):
-            line = cache.next().strip()
+            line = self.cache.__next__().strip()
             if line == path:
                 return line
 
     def _find_by_index(self, index):
+        """ find specific line by index """
         # (iter ) -> (str)
-        cache = self.cache
+        self.cache.seek(0, 0)
         for i in range(self.size):
+            line = self.cache.__next__().strip()
             if i == index:
-                line = cache.next().strip()
                 return line
 
-    def _concat(self, indexBefore, indexAfter):
-        for i in range(self.size):
-            if i == index:
-                line = self.cache.next().strip()
-                return line
-
-    def push(self, path):
-        with open(self.file_path, 'a') as f:
-            f.write(path)
+    def push(self, items):
+        """ add line at the end of data """
+        if isinstance(items, str):
+            items = list(items)
+        created_at = datetime.datetime.now()
+        items = map(lambda item: "{} {}".format(item, created_at), items)
+        with open(self.conn.file_path, 'a') as f:
+            f.write('\n')
+            f.writelines(items)
+        return True
 
     def get(self, i=0):
+        """ find specific line by key """
         if i == -1:
-            return self._read_all()
+            return self._read_all()[-1]
         return self._find_by_index(i)
 
-    def remove(self, index=None):
-        if not index or -1:
-            self.get_last_line()
-
-        self.file_obj.seek(0, 0)
-
-        with open(self.file_path + '_test', 'w') as f:
-            for i, line in enumerate(self.file_obj):
-                f.write(line)
-                if i == index - 1:
-                    break
+    def _add_remove_flag(self,line , index):
+        pass
 
 
-        after = self.file_obj.readlines(index)
-        print(after)
-        with open(self.file_path + '_test', 'a') as f:
-            f.writelines(after)
+    def remove(self, index):
+        removed_line = ''
+        if index > len(self.conn):
+            raise IndexError('index error')
+        if index < -1:
+            raise ValueError('Do not support negative integer except -1')
+        # if not index or -1:
+        #     self.conn.get_last_line()
 
-    def get_until(self, index):
-        import itertools
-        lines = itertools.islice(self.cache, index)
+        if index == len(self.conn) - 1:
+            offsets = len(self.conn) - 2
+            print(self.conn.index_table)
+            line_index = self.conn.index_table[offsets]
+            print('===========')
+            print(line_index)
+            read_ = self.cache.read(line_index)
+            print(read_)
+            print(self.cache.tell())
 
-        return lines
+        # # get data to index
+        # self.cache.seek(0, 0)
+        #
+        # with open(self.conn.file_path, 'w') as f:
+        #     for i, line in enumerate(self.cache):
+        #         print(i,line,index)
+        #         if i == index:
+        #             print('===========')
+        #             print(line)
+        #             self.offset = f.tell() + len(line)
+        #             removed_line = line
+        #             f.write('\n')
+        #             break
+        #
+        # # append data from index + 1 to the last line
+        # self.cache.seek(self.offset, 0)
+        # with open(self.conn.file_path, 'a') as f:
+        #     f.writelines(self.cache)
+
+        return removed_line
+
+    def _create_index_table(self):
+        offset = 0
+        for i, line in enumerate(self.cache):
+            self.conn.index_table.update({i: offset})
+            offset += len(line)
 
 
 class DBConnector(object):

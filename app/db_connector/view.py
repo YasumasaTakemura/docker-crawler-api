@@ -3,6 +3,7 @@ import os
 import json
 from flask import request, Blueprint, abort, jsonify
 from .model import DBConnector, DMO, DDO
+from .model import FileDB
 from app.store.store import Store
 
 logger = logging.getLogger('DB_View')
@@ -10,6 +11,7 @@ table_name = os.environ.get('DATABASE_NAME') or 'crawler'
 
 app = Blueprint('db', __name__, url_prefix=os.getenv('API_VERSION'))
 
+StorageFileName = 'test'
 
 @app.route('/', methods=['GET','POST'])
 def working():
@@ -49,10 +51,13 @@ def show_records():
 
 @app.route('/get_next', methods=['GET'])
 def get_next():
-    db = DBConnector()
-    dmo = DMO(db)
-    path = dmo.get_next_path(table=table_name)
-    return path or '', 200
+    # db = DBConnector()
+    # dmo = DMO(db)
+    # path = dmo.get_next_path(table=table_name)
+    db = FileDB(StorageFileName)
+    record = db.get()
+    return record or '', 200
+    # return path or '', 200
 
 
 @app.route('/push_paths', methods=['POST'])
@@ -66,6 +71,28 @@ def push_urls():
     # logger.info(records)
     if dmo.push_paths(records, table=table_name):
         return jsonify(data=records), 200
+    logger.error('could not push urls')
+    abort(400, '')
+
+@app.route('/push', methods=['POST'])
+def push():
+    paths = request.form.getlist('path')
+    logger.info(paths)
+    db = FileDB(StorageFileName)
+    if db.push(paths):
+        return jsonify(data=paths), 200
+    logger.error('could not push urls')
+    abort(400, '')
+
+@app.route('/remove', methods=['POST'])
+def remove():
+    index = request.args.get('index')
+    db = FileDB(StorageFileName)
+    if not index:
+        index = len(db.conn) -1
+    line = db.remove(index)
+    if line:
+        return jsonify(data=line), 200
     logger.error('could not push urls')
     abort(400, '')
 
