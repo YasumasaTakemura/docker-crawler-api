@@ -20,56 +20,12 @@ class TestDBConnection(unittest.TestCase):
         res = self.app.get('/v2/')
         self.assertEqual(b'working', res.data)
 
-    # def create_table(self):
-    #     res = self.app.post('/create_table')
-    #     self.assertEqual(b'table created' or b'no tables created', res.data)
-
-    def test_get_next(self):
-        res = self.app.get('/v2/get_next')
+    def test_get(self):
+        res = self.app.get('/v2/get')
         self.assertEqual('hello-world', res.data.decode())
 
-    def test_insert(self):
-        path = ['hello-world']
-        res = self.app.post('/v2/push_paths',data={'path':path})
+    def test_push(self):
+        path = ['hello-world','hello-world2','hello-world3']
+        res = self.app.post('/v2/push',data={'path':path})
         res = json.loads(res.data)
         self.assertTrue(res['data'][0]['path'])
-
-    def test_bulk_insert(self):
-        paths = ['hello-world','hello-world2','hello-world3']
-        res = self.app.post('/v2/push_paths', data={'path': paths})
-        for i,val in enumerate(json.loads(res.data)['data']):
-            # print(val)
-            self.assertTrue(val['path'] in paths[i])
-
-    # def test_upload_file(self):
-    #     url='upload_file'
-    #     bucket_name = os.getenv('BUCKET_NAME')
-    #     if not bucket_name:
-    #         bucket_name = 'test-bucket-name'
-    #     filename = 'Hotel_Review-g308257-d2071436-Reviews-Mana_Lagoon_Backpackers-Mana_Island_Mamanuca_Islands'
-    #     data = 'hello,world!!'
-    #     payload = {
-    #         'bucket_name':bucket_name,
-    #         'filename':filename,
-    #         'data':data,
-    #     }
-    #     res = self.app.post(url,data=payload)
-    #     self.assertEqual(res.status_code, 200)
-    #     self.assertEqual(res.data, '/{}/{}'.format(bucket_name,filename).encode())
-
-
-    def test_upload(self):
-        url='/v2/upload'
-        bucket_name = os.getenv('BUCKET_NAME')
-        if not bucket_name:
-            bucket_name = 'test-bucket-yasu'
-        path = 'hello-world'
-        data = 'hello,world!!'
-        payload = {
-            'bucket_name':bucket_name,
-            'path':path,
-            'data':data,
-        }
-        res = self.app.post(url,data=payload)
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.data, '/{}/{}'.format(bucket_name,path).encode())
