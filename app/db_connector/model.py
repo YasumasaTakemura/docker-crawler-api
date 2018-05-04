@@ -64,18 +64,24 @@ class CacheFile(metaclass=SingletonType):
         self.file_path = file_path
         self.size = os.path.getsize(self.file_path)
         self.index_table = {}
-        self.cache = self._gen_cache()
+        self.cache = self.gen_cache()
         self.offset = 0
+        self.dequeue_counter = 0
 
-    def _gen_cache(self):
+    def gen_cache(self):
         """
         Generate cache
         This cache will be used in each methods
         Do not copy or generate list from this cache for memory efficiency
         """
-        self.cache = open(self.file_path,'r+')
+        self.cache = open(self.file_path, 'r+')
         logger.info('List of Queue is now dumped and you got pointer of file')
         return self.cache
+
+    def update_status(self, line):
+        filename = self.file_path + '_status'
+        with open(filename, 'a') as f:
+            f.writelines('{} {}\n'.format(line, datetime.datetime.now()))
 
     def __init(self):
         """ init format or something """
@@ -128,6 +134,7 @@ class FileDB(object):
         self.cache = self.conn.cache
         self.size = self.conn.size
         self._create_index_table()
+        self.next_list = []
 
     @staticmethod
     def _connect(file_path):
@@ -155,26 +162,68 @@ class FileDB(object):
             if i == index:
                 return line
 
+    def as_record(self, line):
+        # type (str)=> (obj)
+        record = line.split(' ')
+        return record
+
+    def dequeue(self):
+        self.cache.seek(0, 0)
+        self.cache.__next__()
+        pos = self.cache.tell()
+
+    def update_index_table(self, items):
+        for item in items:
+            self.conn.index_table.update({0: ''})
+
     def push(self, items):
-        """ add line at the end of data """
+        """
+        Add line at the end of data
+        Format of fields of line is below
+            Path : str
+            crawled : bi
+
+            ex) `path-name` 0or1\n
+        """
         if isinstance(items, str):
             items = list(items)
-        created_at = datetime.datetime.now()
-        items = map(lambda item: "{} {}".format(item, created_at), items)
+        items = map(lambda item: "{}\n".format(item), items)
         with open(self.conn.file_path, 'a') as f:
-            f.write('\n')
             f.writelines(items)
+        self.conn.gen_cache()
         return True
 
-    def get(self, i=0):
-        """ find specific line by key """
-        if i == -1:
-            return self._read_all()[-1]
-        return self._find_by_index(i)
+    def get(self):
+        """ find specific line by key and process dequeue_counter """
 
-    def _add_remove_flag(self,line , index):
-        pass
+        # for a rollback
+        dequeue_counter = self.conn.dequeue_counter
+        try:
+            line = self._find_by_index(self.conn.dequeue_counter)
+            self.conn.update_status(line)
+            self.conn.dequeue_counter += 1
+            return line
+        except StopIteration as e:
+            # rollback counter
+            logger.info(e)
+            self.conn.dequeue_counter = dequeue_counter
+            return
+        except Exception as e:
+            # rollback counter
+            logger.info(e)
+            self.conn.dequeue_counter = dequeue_counter
+            raise e
 
+    def _create_index_table(self):
+        """ create index table and set index of last line and offsets  """
+        offset = 0
+        index = 0
+        for i, line in enumerate(self.cache):
+            index = i
+            self.conn.index_table.update({i: offset})
+            offset += len(line)
+        self.conn.last_line_index = index
+        self.conn.last_line_offsets = offset
 
     def remove(self, index):
         removed_line = ''
@@ -215,12 +264,6 @@ class FileDB(object):
         #     f.writelines(self.cache)
 
         return removed_line
-
-    def _create_index_table(self):
-        offset = 0
-        for i, line in enumerate(self.cache):
-            self.conn.index_table.update({i: offset})
-            offset += len(line)
 
 
 class DBConnector(object):

@@ -49,7 +49,7 @@ def show_records():
         abort(400, )
 
 
-@app.route('/get_next', methods=['GET'])
+@app.route('/get', methods=['GET'])
 def get_next():
     # db = DBConnector()
     # dmo = DMO(db)
