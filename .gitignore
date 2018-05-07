@@ -15,6 +15,7 @@ secret.*
 .idea/
 .local
 url_pile*
+offsets
 
 # Distribution / packaging
 .Python

@@ -13,6 +13,7 @@ class TestVIew(unittest.TestCase):
         app.testing = True
         self.app = app.test_client()
 
+
     def tearDown(self):
         pass
 
