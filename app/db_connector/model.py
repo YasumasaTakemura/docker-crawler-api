@@ -33,41 +33,10 @@ class CacheFile(metaclass=SingletonType):
 
     def __init__(self, file_path):
         self.file_path = file_path + '.log'
-        self.size = os.path.getsize(self.file_path)
+        self.size = self.update_size()
         self.index_table = {}
         self.cache = self.gen_cache()
         self.dequeue_counter = 0
-
-    def gen_cache(self):
-        """
-        Generate cache
-        This cache will be used in each methods
-        Do not copy or generate list from this cache for memory efficiency
-        """
-        if os.path.exists(self.file_path):
-            self.cache = open(self.file_path, 'r')
-        else:
-            self.cache = open(self.file_path, 'w')
-        logger.info('List of Queue is now dumped and you got pointer of file')
-        return self.cache
-
-    def update_status(self, line):
-        filename = self.file_path + '.status'
-        with open(filename, 'a') as f:
-            f.writelines('{} {}\n'.format(line, datetime.datetime.now()))
-
-    def _find_last_line_index(self):
-        size = self.size
-        while size > 0:
-            self.cache.seek(size)
-            if self.cache.readline() == '\n':
-                return size + 1
-            size -= 1
-
-    def get_last_line(self):
-        offset = self._find_last_line_index()
-        self.cache.seek(offset)
-        return self.cache.readline()
 
     def __len__(self):
         self.cache.seek(0, 0)
@@ -87,12 +56,59 @@ class CacheFile(metaclass=SingletonType):
             if index == i:
                 return line.replace('\n', '')
 
+    def update_size(self):
+        self.size = os.path.getsize(self.file_path)
+
+
+    def gen_cache(self):
+        """
+        Generate cache
+        This cache will be used in each methods
+        Do not copy or generate list from this cache for memory efficiency
+        """
+        if os.path.exists(self.file_path):
+            self.cache = open(self.file_path, 'r')
+        else:
+            self.cache = open(self.file_path, 'w')
+        logger.info('List of Queue is now dumped and you got pointer of file')
+        return self.cache
+
+    def update_status(self, line):
+        filename = self.file_path + '.status'
+        with open(filename, 'a') as f:
+            f.writelines('{} {}\n'.format(line, datetime.datetime.now()))
+
+    def incr_offsets(self):
+        FILENAME = 'offsets'
+        initial_val = str(-1)
+        if not os.path.exists(FILENAME):
+            with open(FILENAME, 'w') as f:
+                f.write(initial_val)
+
+        with open(FILENAME) as rf:
+            offsets = int(rf.read())
+            with open(FILENAME, 'w') as wf:
+                offsets += 1
+                wf.write(str(offsets))
+
+    def _find_last_line_index(self):
+        size = self.size
+        while size > 0:
+            self.cache.seek(size)
+            if self.cache.readline() == '\n':
+                return size + 1
+            size -= 1
+
+    def get_last_line(self):
+        offset = self._find_last_line_index()
+        self.cache.seek(offset)
+        return self.cache.readline()
+
 
 class FileDB(object):
     def __init__(self, file_path):
         self.conn = self._connect(file_path)
         self.cache = self.conn.cache
-        self.size = self.conn.size
         self._create_index_table()
         self.next_list = []
 
@@ -108,7 +124,7 @@ class FileDB(object):
     def _find_by_path(self, path):
         """ find specific line by key """
         self.cache.seek(0, 0)
-        for i in range(self.size):
+        for i in range(self.conn.size):
             line = self.cache.__next__().strip()
             if line == path:
                 return line
@@ -117,7 +133,7 @@ class FileDB(object):
         """ find specific line by index """
         # (int) -> (str)
         self.cache.seek(0, 0)
-        for i in range(self.size):
+        for i in range(self.conn.size):
             line = self.cache.__next__().strip()
             if i == index:
                 return line
@@ -129,12 +145,14 @@ class FileDB(object):
 
     def push(self, items):
         """ Add line at the end of data """
-        if isinstance(items, str):
-            items = list(items)
+        if not isinstance(items,list):
+            raise TypeError('list is required but got {}'.format(type(items)))
+
         items = map(lambda item: "{}\n".format(item), items)
         with open(self.conn.file_path, 'a') as f:
             f.writelines(items)
         self.conn.gen_cache()
+        self.conn.update_size()
         return True
 
     def get(self):
@@ -142,6 +160,7 @@ class FileDB(object):
         dequeue_counter = self.conn.dequeue_counter  # for a rollback
 
         try:
+            self.cache.seek(0,0)
             line = self._find_by_index(self.conn.dequeue_counter)
             self.conn.update_status(line)
             self.conn.dequeue_counter += 1
