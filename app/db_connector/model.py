@@ -31,12 +31,22 @@ class CacheFile(metaclass=SingletonType):
     """
     _instance = None
 
-    def __init__(self, file_path):
-        self.file_path = file_path + '.log'
-        self.size = os.path.getsize(self.file_path)
+    def __init__(self):
+        self.file_path = 'url_pile'
+        self.file_path_s = 'url_pile.status'
+        self.create_files()
         self.index_table = {}
         self.cache = self.gen_cache()
         self.dequeue_counter = 0
+        self.size = os.path.getsize(self.file_path)
+
+    def create_files(self):
+        if not os.path.exists(os.path.join(os.getcwd(), self.file_path)):
+            with open(self.file_path, 'w'):
+                pass
+        if not os.path.exists(os.path.join(os.getcwd(), self.file_path_s)):
+            with open(self.file_path_s, 'w'):
+                pass
 
     def gen_cache(self):
         """
@@ -44,16 +54,12 @@ class CacheFile(metaclass=SingletonType):
         This cache will be used in each methods
         Do not copy or generate list from this cache for memory efficiency
         """
-        if os.path.exists(self.file_path):
-            self.cache = open(self.file_path, 'r')
-        else:
-            self.cache = open(self.file_path, 'w')
+        self.cache = open(self.file_path)
         logger.info('List of Queue is now dumped and you got pointer of file')
         return self.cache
 
     def update_status(self, line):
-        filename = self.file_path + '.status'
-        with open(filename, 'a') as f:
+        with open(self.file_path_s, 'a') as f:
             f.writelines('{} {}\n'.format(line, datetime.datetime.now()))
 
     def _find_last_line_index(self):
@@ -68,6 +74,16 @@ class CacheFile(metaclass=SingletonType):
         offset = self._find_last_line_index()
         self.cache.seek(offset)
         return self.cache.readline()
+
+    def check_dup(self, items):
+        self.cache.seek(0, 0)
+        cache = self.cache
+        lines = list(map(lambda line: line.strip(), cache.readlines()))
+
+        if not lines:
+            return items
+        lines_no_dup = [item for item in items if item not in set(lines)]
+        return lines_no_dup
 
     def __len__(self):
         self.cache.seek(0, 0)
@@ -89,17 +105,17 @@ class CacheFile(metaclass=SingletonType):
 
 
 class FileDB(object):
-    def __init__(self, file_path):
-        self.conn = self._connect(file_path)
+    def __init__(self):
+        self.conn = self._connect()
         self.cache = self.conn.cache
         self.size = self.conn.size
         self._create_index_table()
         self.next_list = []
 
     @staticmethod
-    def _connect(file_path):
+    def _connect():
         """ Connect to some object or DB driver"""
-        return CacheFile(file_path)
+        return CacheFile()
 
     def _read_all(self):
         """ dump all data as list """
@@ -131,9 +147,9 @@ class FileDB(object):
         """ Add line at the end of data """
         if isinstance(items, str):
             items = list(items)
-        items = map(lambda item: "{}\n".format(item), items)
+        lines = [line + '\n' for line in self.conn.check_dup(items)]
         with open(self.conn.file_path, 'a') as f:
-            f.writelines(items)
+            f.writelines(lines)
         self.conn.gen_cache()
         return True
 

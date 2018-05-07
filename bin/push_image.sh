@@ -39,6 +39,7 @@ do
     esac
 done
 
+echo "============Start Pushing Docker Image To GCR============"
 echo $SOURCE_IMAGE:$ENV
 
 #docker build --no-cache=true -t gcr.io/$PROJECT_ID/$SOURCE_IMAGE:$ENV .
