@@ -4,6 +4,10 @@ import base64
 from flask import abort
 from google.api_core.exceptions import Conflict
 import bz2
+import logging
+
+logger = logging.getLogger('Store_model')
+
 
 class Store(object):
     """singleton"""
@@ -18,32 +22,42 @@ class Store(object):
         return cls._instance
 
     def connect(self):
-        self.client = storage.Client()
+        try:
+            self.client = storage.Client()
+        except Exception as e:
+            logger.error(str(e))
 
-    def create_bucket(self,bucket_name):
+    def create_bucket(self, bucket_name):
         try:
             bucket = self.client.create_bucket(bucket_name)
             return bucket.name
-        except Conflict as e :
-            abort(400,e)
+        except Conflict as e:
+            logger.error(e)
+            abort(400, '')
 
-    def delete_bucket(self,bucket_name):
+    def delete_bucket(self, bucket_name):
         """Deletes a bucket. The bucket must be empty."""
         bucket = self.client.get_bucket(bucket_name)
         bucket.delete()
+        logger.error('Bucket {} deleted'.format(bucket.name))
         print('Bucket {} deleted'.format(bucket.name))
 
-    def list_blobs(self,bucket_name):
+    def list_blobs(self, bucket_name):
         """Lists all the blobs in the bucket."""
         # type : (str)=> (list)
-        bucket = self.client.get_bucket(bucket_name)
+        try:
+            bucket = self.client.get_bucket(bucket_name)
+        except Exception as e:
+            logger.error(e)
+            raise Exception(str(e))
+
         blobs = bucket.list_blobs()
         res = []
         for blob in blobs:
             res.append(blob.name)
         return res
 
-    def list_blobs_with_prefix(self,bucket_name,prefix,delimiter='/'):
+    def list_blobs_with_prefix(self, bucket_name, prefix, delimiter='/'):
         """Lists all the blobs in the bucket."""
         # type : (str)=> (list)
         bucket = self.client.get_bucket(bucket_name)
@@ -56,23 +70,24 @@ class Store(object):
                 res.append(prefix)
         return res
 
-    def write(self,bucket_name,enc_key,filename,data):
+    def write(self, bucket_name, filename, data, enc_key=None):
         # Encryption key must be an AES256 key represented as a bytestring with
         # 32 bytes. Since it's passed in as a base64 encoded string, it needs
         # to be decoded.
         try:
             bucket = self.client.get_bucket(bucket_name)
         except Forbidden as e:
+            logger.error(e)
             raise Forbidden(str(e))
-        blob = storage.Blob(filename, bucket,encryption_key=enc_key)
+        blob = storage.Blob(filename, bucket, encryption_key=enc_key)
         data = bz2.compress(data.encode(), 9)
         try:
-            res = blob.upload_from_string(data,content_type='application/gzip')
-            return '/{}/{}'.format(bucket_name,filename)
+            blob.upload_from_string(data, content_type='application/gzip')
+            return '/{}/{}'.format(bucket_name, filename)
         except Exception as e:
-            return e
+            logger.error(e)
 
-    def read(self,bucket_name,enc_key,filename):
+    def read(self, bucket_name, enc_key, filename):
         bucket = self.client.get_bucket(bucket_name)
         encryption_key = base64.b64decode(enc_key)
         blob = storage.Blob(filename, bucket, encryption_key=encryption_key)

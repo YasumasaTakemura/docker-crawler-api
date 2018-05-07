@@ -10,8 +10,10 @@ __pycache__/
 
 #original
 *.log
+*.log.status
 secret.*
 .idea/
+.local
 
 # Distribution / packaging
 .Python

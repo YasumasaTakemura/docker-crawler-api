@@ -3,8 +3,7 @@
 set -e
 
 flg=$#
-SOURCE_IMAGE=$1
-PROJECT_ID=yasu-xxx-training-sandbox
+ENV=dev
 
 usage_exit() {
         if [  $flg -eq  0 ] || [ -z $SOURCE_IMAGE ];then
@@ -13,17 +12,25 @@ usage_exit() {
         fi
 }
 
+set_env(){
+    export `cat ./env/.env | grep -v ^# | xargs`
+}
+
+
 # validation
-usage_exit
+#usage_exit
+
+set_env
 
 # check args
-while getopts p:s:h OPT
+while getopts p:s:e:h OPT
 do
     case $OPT in
         p)  PROJECT_ID=$OPTARG
             ;;
         s)  SOURCE_IMAGE=$OPTARG
-            usage_exit
+            ;;
+        e)  ENV=$OPTARG
             ;;
         h)  usage_exit
             ;;
@@ -32,6 +39,9 @@ do
     esac
 done
 
-docker build -t $SOURCE_IMAGE .
-docker tag $SOURCE_IMAGE gcr.io/$PROJECT_ID/$SOURCE_IMAGE
-gcloud docker -- push gcr.io/$PROJECT_ID/$SOURCE_IMAGE
+echo $SOURCE_IMAGE:$ENV
+
+#docker build --no-cache=true -t gcr.io/$PROJECT_ID/$SOURCE_IMAGE:$ENV .
+docker build -t gcr.io/$PROJECT_ID/$SOURCE_IMAGE:$ENV .
+#docker tag $SOURCE_IMAGE gcr.io/$PROJECT_ID/$SOURCE_IMAGE:$ENV
+gcloud docker -- push gcr.io/$PROJECT_ID/$SOURCE_IMAGE:$ENV

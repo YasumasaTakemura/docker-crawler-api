@@ -1,32 +1,23 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-from datetime import datetime
 from flask import Flask
 import google.cloud.logging
 from app.db_connector import view as db
-from env import settings
-
-settings.load_dotenv()
-
-# _logger = logging.getLogger('LoggingTest')
-# _logger.setLevel(logging.INFO)
-# fh = logging.FileHandler('test.log')
-# _logger.addHandler(fh)
-# logger = _logger
+from app.search_console_test import view as test_app
 
 app = Flask(__name__)
-app.config['PROJECT_ID'] = os.getenv('PROJECT_ID')
 
-if not app.testing:
-    # Attaches a Google Stackdriver logging handler to the root logger
-    client = google.cloud.logging.Client(app.config['PROJECT_ID'])
-    client.setup_logging()
-    logger = logging.getLogger('LoggingTest')
-    logger.info("API manager is running {}".format(str(datetime.now())))
-
-modules_define = [db.app]
+modules_define = [db.app,test_app.app]
 for _app in modules_define:
     app.register_blueprint(_app)
 
-
+try:
+    client = google.cloud.logging.Client(os.environ.get('PROJECT_ID'))
+    print(client._credentials)
+    client.setup_logging(logging.INFO)
+    logger = logging.getLogger('LoggingTest')
+    logger.setLevel(logging.INFO)
+    logger.info('entry')
+except:
+    pass
