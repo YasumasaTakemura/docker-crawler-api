@@ -6,7 +6,7 @@ from app.db_connector.model import FileDB
 class TestDBConnection(unittest.TestCase):
 
     def setUp(self):
-        self.db = FileDB('url_pile')
+        self.db = FileDB()
         # print(self.db.conn.dequeue_counter)
 
     def tearDown(self):

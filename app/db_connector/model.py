@@ -34,19 +34,11 @@ class CacheFile(metaclass=SingletonType):
     def __init__(self):
         self.file_path = 'url_pile'
         self.file_path_s = 'url_pile.status'
+        self.offsets_filename = 'offsets'
         self.create_files()
-        self.size = self.update_size()
-        self.index_table = {}
-        self.cache = self.gen_cache()
+        self.update_size()
+        self.gen_cache()
         self.dequeue_counter = 0
-
-    def create_files(self):
-        if not os.path.exists(os.path.join(os.getcwd(), self.file_path)):
-            with open(self.file_path, 'w'):
-                pass
-        if not os.path.exists(os.path.join(os.getcwd(), self.file_path_s)):
-            with open(self.file_path_s, 'w'):
-                pass
 
     def __len__(self):
         self.cache.seek(0, 0)
@@ -66,6 +58,23 @@ class CacheFile(metaclass=SingletonType):
             if index == i:
                 return line.replace('\n', '')
 
+    def create_files(self):
+
+        # url_pile
+        if not os.path.exists(os.path.join(os.getcwd(), self.file_path)):
+            with open(self.file_path, 'w'):
+                pass
+        if not os.path.exists(os.path.join(os.getcwd(), self.file_path_s)):
+            with open(self.file_path_s, 'w'):
+                pass
+
+        # offsets
+        initial_val = str(-1)
+        if not os.path.exists(self.offsets_filename):
+            with open(self.offsets_filename, 'w') as f:
+                f.write(initial_val)
+
+
     def update_size(self):
         self.size = os.path.getsize(self.file_path)
 
@@ -77,22 +86,15 @@ class CacheFile(metaclass=SingletonType):
         """
         self.cache = open(self.file_path)
         logger.info('List of Queue is now dumped and you got pointer of file')
-        return self.cache
 
     def update_status(self, line):
         with open(self.file_path_s, 'a') as f:
             f.writelines('{} {}\n'.format(line, datetime.datetime.now()))
 
     def incr_offsets(self):
-        FILENAME = 'offsets'
-        initial_val = str(-1)
-        if not os.path.exists(FILENAME):
-            with open(FILENAME, 'w') as f:
-                f.write(initial_val)
-
-        with open(FILENAME) as rf:
+        with open(self.offsets_filename) as rf:
             offsets = int(rf.read())
-            with open(FILENAME, 'w') as wf:
+            with open(self.offsets_filename, 'w') as wf:
                 offsets += 1
                 wf.write(str(offsets))
 
@@ -124,7 +126,6 @@ class FileDB(object):
     def __init__(self):
         self.conn = self._connect()
         self.cache = self.conn.cache
-        self._create_index_table()
         self.next_list = []
 
     @staticmethod
@@ -154,10 +155,6 @@ class FileDB(object):
                 return line
         raise IndexError('Out Of Index')
 
-    def update_index_table(self, items):
-        for item in items:
-            self.conn.index_table.update({0: ''})
-
     def push(self, items):
         """ Add line at the end of data """
         if not isinstance(items, list):
@@ -178,6 +175,7 @@ class FileDB(object):
             line = self._find_by_index(self.conn.dequeue_counter)
             self.conn.update_status(line)
             self.conn.dequeue_counter += 1
+            self.conn.incr_offsets()
             return line
         except StopIteration as e:
             # rollback counter
@@ -189,14 +187,3 @@ class FileDB(object):
             logger.info(e)
             self.conn.dequeue_counter = dequeue_counter
             raise e
-
-    def _create_index_table(self):
-        """ create index table and set index of last line and offsets  """
-        offset = 0
-        index = 0
-        for i, line in enumerate(self.cache):
-            index = i
-            self.conn.index_table.update({i: offset})
-            offset += len(line)
-        self.conn.last_line_index = index
-        self.conn.last_line_offsets = offset
