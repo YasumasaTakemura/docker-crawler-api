@@ -23,7 +23,7 @@ class CacheFile(metaclass=SingletonType):
     - Data structure of file needs to be CSV or TSV
 
     Member props:
-        file_path       : file path
+        log_file       : file path
         size            : file size(counts of log file)
         index_table     : key for line index, value for offsets from top which seek(0,0)
         cache           : dumped log file
@@ -32,9 +32,13 @@ class CacheFile(metaclass=SingletonType):
     _instance = None
 
     def __init__(self):
-        self.file_path = 'url_pile'
-        self.file_path_s = 'url_pile.status'
-        self.offsets_filename = 'offsets'
+        dir = './log'
+        self.log_file = os.path.join(dir, '.log')
+        self.index_file = os.path.join(dir, '.index')
+        self.timestamp_file = os.path.join(dir, '.timeindex')
+        self.offsets_file = os.path.join(dir, '.offsets')
+        self.offsets = -1
+        self.index_table = dict()
         self.create_files()
         self.update_size()
         self.gen_cache()
@@ -59,24 +63,60 @@ class CacheFile(metaclass=SingletonType):
                 return line.replace('\n', '')
 
     def create_files(self):
-
-        # url_pile
-        if not os.path.exists(os.path.join(os.getcwd(), self.file_path)):
-            with open(self.file_path, 'w'):
-                pass
-        if not os.path.exists(os.path.join(os.getcwd(), self.file_path_s)):
-            with open(self.file_path_s, 'w'):
+        # .log
+        if not os.path.exists(os.path.join(os.getcwd(), self.log_file)):
+            with open(self.log_file, 'w'):
+                # just create empty file
                 pass
 
-        # offsets
+        # .index
+        if not os.path.exists(os.path.join(os.getcwd(), self.index_file)):
+            with open(self.index_file, 'w'):
+                # just create empty file
+                pass
+
+        # .offsets
         initial_val = str(-1)
-        if not os.path.exists(self.offsets_filename):
-            with open(self.offsets_filename, 'w') as f:
+        if not os.path.exists(self.offsets_file):
+            with open(self.offsets_file, 'w') as f:
                 f.write(initial_val)
 
+        # .timeindex
+        if not os.path.exists(os.path.join(os.getcwd(), self.timestamp_file)):
+            with open(self.timestamp_file, 'w'):
+                # just create empty file
+                pass
+
+    def update_index_table(self):
+        index_table = dict()
+        self.cache.read(self.offsets)
+        with open(self.index_file) as f:
+            for i, msg in enumerate(f.readlines()):
+                index_table.update({i: msg.split(' ')[0]})
+        self.index_table = index_table
+        self.cache.seek(0, 0)
 
     def update_size(self):
-        self.size = os.path.getsize(self.file_path)
+        self.size = os.path.getsize(self.log_file)
+
+    def update_offsets(self):
+        filename = self.index_file
+        def get_list_msg(fp):
+            size = os.path.getsize(filename)
+            while size > 0:
+                fp.seek(size)
+                if fp.readline() == '\n':
+                    return size + 1
+                size -= 1
+
+        if self.offsets == -1:
+            with open(self.index_file) as f:
+                offsets = get_list_msg(f)
+                print('===========')
+                print(f.tell())
+                f.read(offsets -1)
+                msg = f.readline()
+                print(msg)
 
     def gen_cache(self):
         """
@@ -84,19 +124,8 @@ class CacheFile(metaclass=SingletonType):
         This cache will be used in each methods
         Do not copy or generate list from this cache for memory efficiency
         """
-        self.cache = open(self.file_path)
+        self.cache = open(self.log_file)
         logger.info('List of Queue is now dumped and you got pointer of file')
-
-    def update_status(self, line):
-        with open(self.file_path_s, 'a') as f:
-            f.writelines('{} {}\n'.format(line, datetime.datetime.now()))
-
-    def incr_offsets(self):
-        with open(self.offsets_filename) as rf:
-            offsets = int(rf.read())
-            with open(self.offsets_filename, 'w') as wf:
-                offsets += 1
-                wf.write(str(offsets))
 
     def _find_last_line_index(self):
         size = self.size
@@ -107,9 +136,10 @@ class CacheFile(metaclass=SingletonType):
             size -= 1
 
     def get_last_line(self):
+        # get last line as list
         offset = self._find_last_line_index()
         self.cache.seek(offset)
-        return self.cache.readline()
+        return self.cache.readline().strip().split(' ')
 
     def check_dup(self, items):
         self.cache.seek(0, 0)
@@ -120,6 +150,40 @@ class CacheFile(metaclass=SingletonType):
             return items
         lines_no_dup = [item for item in items if item not in set(lines)]
         return lines_no_dup
+
+    def update_index(self, msg: str) -> str:
+        """ update offsets and generate a line of index  """
+        if self.offsets == -1:  # for initial action
+            self.offsets = 0
+            return '{} {}\n'.format(self.offsets, len(msg))
+        self.offsets = self.offsets + len(msg)
+        return '{} {}\n'.format(self.offsets, len(msg))
+
+    def roll_back_commit(self):
+        yield
+
+    def commit_index(self, msg: str) -> None:
+        # todo : rollback
+        all_ = 0
+        with open(self.index_file, 'a') as f:
+            msg = self.update_index(msg)
+            f.write(msg)
+            all_ += 1
+        with open(self.timestamp_file, 'a') as f:
+            msg = '{} {}\n'.format(self.offsets, datetime.datetime.now().strftime('%Y-%m-%d'))
+            f.write(msg)
+            all_ += 1
+        if all_ == 2:
+            self.gen_cache()
+            self.update_index_table()
+        else:
+            raise ValueError('all_ must be 2 but got {}'.format(all_))
+
+    def commit(self, msg: str) -> None:
+        # todo : rollback
+        # self.roll_back_commit(self.offsets,msg)
+        with open(self.log_file, 'a') as f:
+            f.write(msg + '\n')
 
 
 class FileDB(object):
@@ -148,7 +212,6 @@ class FileDB(object):
     def _find_by_index(self, index):
         """ find specific line by index """
         # (int) -> (str)
-        self.cache.seek(0, 0)
         for i in range(self.conn.size):
             line = self.cache.__next__().strip()
             if i == index:
@@ -159,31 +222,35 @@ class FileDB(object):
         """ Add line at the end of data """
         if not isinstance(items, list):
             raise TypeError('list is required but got {}'.format(type(items)))
-        lines = [line + '\n' for line in self.conn.check_dup(items)]
-        with open(self.conn.file_path, 'a') as f:
-            f.writelines(lines)
-        self.conn.gen_cache()
+        for msg in self.conn.check_dup(items):
+            self.conn.commit(msg)
         self.conn.update_size()
         return True
 
-    def get(self):
+    def get(self, index=None):
         """ find specific line by key and process dequeue_counter """
-        dequeue_counter = self.conn.dequeue_counter  # for a rollback
+        self.cache.seek(0, 0)
 
+        print(index, self.conn.offsets)
+
+        if index and index > self.conn.offsets:
+            raise IndexError('limit of offsets is {} but got {}'.format(self.conn.offsets, index))
+
+        offset = self.conn.offsets
+        if index:
+            offset = self.conn.index_table.get(index)
         try:
-            self.cache.seek(0, 0)
-            line = self._find_by_index(self.conn.dequeue_counter)
-            self.conn.update_status(line)
-            self.conn.dequeue_counter += 1
-            self.conn.incr_offsets()
-            return line
+            self.cache.read(offset)
+            msg = self.cache.readline()
+            self.conn.commit_index(msg)
+            return msg
         except StopIteration as e:
             # rollback counter
             logger.info(e)
-            self.conn.dequeue_counter = dequeue_counter
+            self.conn.roll_back_commit()
             return
         except Exception as e:
             # rollback counter
             logger.info(e)
-            self.conn.dequeue_counter = dequeue_counter
+            self.conn.roll_back_commit()
             raise e

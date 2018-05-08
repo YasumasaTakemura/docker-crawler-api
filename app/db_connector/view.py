@@ -39,10 +39,11 @@ def show_records(types):
 
 
 @app.route('/get', methods=['GET'])
-def get_next():
+def get():
+    index = request.args.get('index')
     db = FileDB()
-    record = db.get()
-    return record + '\n' or '', 200
+    record = db.get(index)
+    return record or '', 200
 
 
 @app.route('/push', methods=['POST'])

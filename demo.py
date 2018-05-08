@@ -5,23 +5,23 @@ import atexit
 # data = ( i for i in [(1,'a'),(2,'b'),(3,'c')])
 # data = FileIO('lines')
 # a = open('lines')
-
-
-def test(x):
-    return x * x
-atexit.register(test,10)
-atexit.register(test,20)
-atexit.register(test,30)
-cache = FileDB('lines')
-print(cache.conn)
-cache.push('e.text')
-# print(cache.get(2))
-# print(cache.conn.index_table)
-# cache.remove(2)
-
-cache2 = FileDB('lines')
-print(cache2.conn)
-assert cache.conn == cache2.conn
+#
+#
+# def test(x):
+#     return x * x
+# atexit.register(test,10)
+# atexit.register(test,20)
+# atexit.register(test,30)
+# cache = FileDB('lines')
+# print(cache.conn)
+# cache.push('e.text')
+# # print(cache.get(2))
+# # print(cache.conn.index_table)
+# # cache.remove(2)
+#
+# cache2 = FileDB('lines')
+# print(cache2.conn)
+# assert cache.conn == cache2.conn
 # print(cache2.conn.index_table)
 # print(cache[-3])
 # print(rs)
@@ -29,3 +29,13 @@ assert cache.conn == cache2.conn
 
 # l = len(cache)
 # print(l)
+
+def calc(nmax):
+    s = 0
+    for i in range(0, nmax + 1):
+        a = (-1) ** i * 1 / (2 * i + 1)
+        s += a
+    return 4 * s
+
+pi = calc(10**4)
+print(pi)
