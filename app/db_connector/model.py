@@ -3,6 +3,7 @@
 import os
 import logging
 import datetime
+from app.settings import SETTING
 
 logger = logging.getLogger('DB_Model')
 logger.setLevel(logging.DEBUG)
@@ -37,12 +38,13 @@ class CacheFile(metaclass=SingletonType):
         self.index_file = os.path.join(dir, '.index')
         self.timestamp_file = os.path.join(dir, '.timeindex')
         self.offsets_file = os.path.join(dir, '.offsets')
-        self.offsets = -1
+        self.offsets = 0
         self.index_table = dict()
         self.create_file(self.log_file)
         self.create_file(self.index_file)
         self.create_file(self.timestamp_file)
-        self.update_size()
+        self.size = os.path.getsize(self.log_file)
+        self.update_index_size()
         self.gen_cache()
         # self.dequeue_counter = 0
 
@@ -105,40 +107,60 @@ class CacheFile(metaclass=SingletonType):
         self.index_table = index_table
         self.cache.seek(0, 0)
 
-    def update_size(self):
+    def update_filesize(self):
         self.size = os.path.getsize(self.log_file)
+        self.index_size = os.path.getsize(self.index_file)
 
-    @staticmethod
-    def get_last_msg(f):
-        f.seek(-1, 2)
-        p = f.tell()
-        while p > 0:
-            msg = f.read()
-            f.seek(p)
-            if len(msg) > 2 and msg.startswith(b'\n') and msg.endswith(b'\n'):
-                f.seek(p + 2)
-                return f
+    def get_last_index(self, fp):
+        """
+        Get the end of line
+        Loop the byte to find specific pattern from the end
+
+        Args:
+            fp : file obj for cache
+        """
+        fp.seek(-1, 2)
+        p = fp.tell()
+        initial_match = lambda index: (index.startswith(b'0') and index.endswith(b'\n'))
+        match = lambda index: (index.startswith(b'\n') and index.endswith(b'\n'))
+        while p >= 0:
+            fp.seek(p)
+            index = fp.read()
+            print(p)
+            print(index)
+            print(initial_match(index) or match(index))
+            if len(index) > 2 and (initial_match(index) or match(index)): # length 1 means empty file
+                print('======index====')
+                fp.seek(p)
+                return p
             p -= 1
 
     def update_offsets(self):
+        """
+        Update offsets counter
+        Do nothing offsets is set or no date in file
+        """
 
-        if self.offsets == -1:
+        # when offsets exist on memory
+        if self.offsets > 0:
+            return
 
-            with open(self.index_file, 'rb') as f:
-                print(len(f.read()))
-                if len(f.read()) <= 1:
-                    return
-                f = self.get_last_msg(f)
-                msg = f.read().strip().split(b' ')
-                print(msg)
-                # f.seek(int(msg[0]))
-                # fp.seek(int(msg[0])-18)
+        # do not update offest when index_file is empty
+        if self.index_size <= 1:
+            return
 
-                f.seek(34,0)
-                print(f.read())
-                f.seek(52,0)
-                print(f.tell())
-                print(f.readline())
+        with open(self.index_file, 'rb') as f:
+            f.seek(0)
+            # empty file or not
+            p = self.get_last_index(f)
+            f.seek(p)
+            index = f.readline().split(b' ')
+            self.offsets = int(index[0])
+            self.length = int(index[1])
+            print(self.offsets)
+
+    def update_index_size(self):
+        self.index_size = os.path.getsize(self.index_file)
 
     def gen_cache(self):
         """
@@ -172,33 +194,35 @@ class CacheFile(metaclass=SingletonType):
         lines_no_dup = [item for item in items if item not in set(lines)]
         return lines_no_dup
 
-    def update_index(self, msg: str) -> str:
+    def add_index(self, msg: str) -> str:
         """ update offsets and generate a line of index  """
-        if self.offsets == -1:  # for initial action
-            self.offsets = 0
-            return '{} {}\n'.format(self.offsets, len(msg))
-        self.offsets = self.offsets + len(msg)
-        return '{} {}\n'.format(self.offsets, len(msg))
+        self.length = len(msg)
+        res = lambda offsets, length: '{} {}\n'.format(offsets, length)
+        if  self.index_size <= 1:  # for initial action
+            return res(0, self.length)
+        self.offsets += self.length
+        return res(self.offsets, self.length)
 
     def roll_back_commit(self):
         yield
 
-    def commit_index(self, msg: str) -> None:
+    def commit_index(self):
         # todo : rollback
 
+        msg = self.cache.readline()
         # do nothing if no messages passed
-        if not msg:
+        if not SETTING.ALLOW_EMPTY and not msg:
             return
 
         try:
             with open(self.index_file, 'a') as f:
-                msg = self.update_index(msg)
-                f.write(msg)
+                index_msg = self.add_index(msg)
+                f.write(index_msg)
+
             with open(self.timestamp_file, 'a') as f:
-                msg = '{} {}\n'.format(self.offsets, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                f.write(msg)
-            self.gen_cache()
-            self.update_index_table()
+                ts_msg = '{} {}\n'.format(self.offsets, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                f.write(ts_msg)
+            return msg
         except Exception as e:
             raise Exception(e)
 
@@ -206,6 +230,7 @@ class CacheFile(metaclass=SingletonType):
         # todo : rollback
         # self.roll_back_commit(self.offsets,msg)
         with open(self.log_file, 'a') as f:
+            print('add', msg)
             f.write(msg + '\n')
 
 
@@ -247,26 +272,27 @@ class FileDB(object):
             raise TypeError('list is required but got {}'.format(type(items)))
         for msg in self.conn.check_dup(items):
             self.conn.commit(msg)
-        self.conn.update_size()
+        self.conn.update_filesize()
         return True
 
     def get(self, index=None):
         """ find specific line by key and process dequeue_counter """
-        self.cache.seek(0,0)
-        print(self.conn.offsets)
         self.conn.update_offsets()
+
+        print('offsets', self.conn.offsets)
+        print('index_size', self.conn.index_size)
 
         if index and index > self.conn.offsets:
             raise IndexError('limit of offsets is {} but got {}'.format(self.conn.offsets, index))
 
-        offset = self.conn.offsets
-        print(offset)
         if index:
             offset = self.conn.index_table.get(index)
         try:
-            self.cache.read(offset)
-            msg = self.cache.readline()
-            self.conn.commit_index(msg)
+            self.conn.cache.seek(self.conn.offsets)
+            msg = self.conn.commit_index()
+            self.conn.gen_cache()
+            self.conn.update_index_table()
+            self.conn.update_index_size()
             return msg
         except StopIteration as e:
             # rollback counter
