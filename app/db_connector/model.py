@@ -39,10 +39,12 @@ class CacheFile(metaclass=SingletonType):
         self.offsets_file = os.path.join(dir, '.offsets')
         self.offsets = -1
         self.index_table = dict()
-        self.create_files()
+        self.create_file(self.log_file)
+        self.create_file(self.index_file)
+        self.create_file(self.timestamp_file)
         self.update_size()
         self.gen_cache()
-        self.dequeue_counter = 0
+        # self.dequeue_counter = 0
 
     def __len__(self):
         self.cache.seek(0, 0)
@@ -61,6 +63,13 @@ class CacheFile(metaclass=SingletonType):
         for i, line in enumerate(self.cache):
             if index == i:
                 return line.replace('\n', '')
+
+    @staticmethod
+    def create_file(filename):
+        if not os.path.exists(os.path.join(os.getcwd(), filename)):
+            with open(filename, 'w'):
+                # just create empty file
+                pass
 
     def create_files(self):
         # .log
@@ -99,24 +108,37 @@ class CacheFile(metaclass=SingletonType):
     def update_size(self):
         self.size = os.path.getsize(self.log_file)
 
+    @staticmethod
+    def get_last_msg(f):
+        f.seek(-1, 2)
+        p = f.tell()
+        while p > 0:
+            msg = f.read()
+            f.seek(p)
+            if len(msg) > 2 and msg.startswith(b'\n') and msg.endswith(b'\n'):
+                f.seek(p + 2)
+                return f
+            p -= 1
+
     def update_offsets(self):
-        filename = self.index_file
-        def get_list_msg(fp):
-            size = os.path.getsize(filename)
-            while size > 0:
-                fp.seek(size)
-                if fp.readline() == '\n':
-                    return size + 1
-                size -= 1
 
         if self.offsets == -1:
-            with open(self.index_file) as f:
-                offsets = get_list_msg(f)
-                print('===========')
-                print(f.tell())
-                f.read(offsets -1)
-                msg = f.readline()
+
+            with open(self.index_file, 'rb') as f:
+                print(len(f.read()))
+                if len(f.read()) <= 1:
+                    return
+                f = self.get_last_msg(f)
+                msg = f.read().strip().split(b' ')
                 print(msg)
+                # f.seek(int(msg[0]))
+                # fp.seek(int(msg[0])-18)
+
+                f.seek(34,0)
+                print(f.read())
+                f.seek(52,0)
+                print(f.tell())
+                print(f.readline())
 
     def gen_cache(self):
         """
@@ -142,10 +164,9 @@ class CacheFile(metaclass=SingletonType):
         return self.cache.readline().strip().split(' ')
 
     def check_dup(self, items):
-        self.cache.seek(0, 0)
         cache = self.cache
+        self.cache.seek(0, 0)
         lines = list(map(lambda line: line.strip(), cache.readlines()))
-
         if not lines:
             return items
         lines_no_dup = [item for item in items if item not in set(lines)]
@@ -164,20 +185,22 @@ class CacheFile(metaclass=SingletonType):
 
     def commit_index(self, msg: str) -> None:
         # todo : rollback
-        all_ = 0
-        with open(self.index_file, 'a') as f:
-            msg = self.update_index(msg)
-            f.write(msg)
-            all_ += 1
-        with open(self.timestamp_file, 'a') as f:
-            msg = '{} {}\n'.format(self.offsets, datetime.datetime.now().strftime('%Y-%m-%d'))
-            f.write(msg)
-            all_ += 1
-        if all_ == 2:
+
+        # do nothing if no messages passed
+        if not msg:
+            return
+
+        try:
+            with open(self.index_file, 'a') as f:
+                msg = self.update_index(msg)
+                f.write(msg)
+            with open(self.timestamp_file, 'a') as f:
+                msg = '{} {}\n'.format(self.offsets, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                f.write(msg)
             self.gen_cache()
             self.update_index_table()
-        else:
-            raise ValueError('all_ must be 2 but got {}'.format(all_))
+        except Exception as e:
+            raise Exception(e)
 
     def commit(self, msg: str) -> None:
         # todo : rollback
@@ -229,14 +252,15 @@ class FileDB(object):
 
     def get(self, index=None):
         """ find specific line by key and process dequeue_counter """
-        self.cache.seek(0, 0)
-
-        print(index, self.conn.offsets)
+        self.cache.seek(0,0)
+        print(self.conn.offsets)
+        self.conn.update_offsets()
 
         if index and index > self.conn.offsets:
             raise IndexError('limit of offsets is {} but got {}'.format(self.conn.offsets, index))
 
         offset = self.conn.offsets
+        print(offset)
         if index:
             offset = self.conn.index_table.get(index)
         try:

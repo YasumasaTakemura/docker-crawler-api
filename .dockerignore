@@ -1,5 +1,6 @@
 .python-version
 .pytest_cache/
+log/
 *.log
 *.log.status
 .local

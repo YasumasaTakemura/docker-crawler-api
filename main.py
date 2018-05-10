@@ -22,4 +22,4 @@ try:
 except:
     pass
 
-# app.run()
+app.run(debug=True)
