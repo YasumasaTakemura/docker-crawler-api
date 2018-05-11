@@ -3,12 +3,12 @@ import os
 import logging
 from flask import Flask
 import google.cloud.logging
-from app.db_connector import view as db
-from app.search_console_test import view as test_app
+from app.consumer import view as consumer
+from app.broker import view as broker
 
 app = Flask(__name__)
 
-modules_define = [db.app,test_app.app]
+modules_define = [consumer.app,broker.app]
 for _app in modules_define:
     app.register_blueprint(_app)
 
@@ -22,4 +22,4 @@ try:
 except:
     pass
 
-app.run(debug=True)
+app.run()

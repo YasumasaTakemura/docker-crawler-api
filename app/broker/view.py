@@ -2,13 +2,14 @@ import logging
 import os
 import json
 from flask import request, Blueprint, abort, jsonify
-from .model import FileDB
 from app.store.store import Store
 
-logger = logging.getLogger('DB_View')
-table_name = os.environ.get('DATABASE_NAME') or 'crawler'
+from app.broker.model import Topic
+from app.consumer.model import Consumer
 
-app = Blueprint('db', __name__, url_prefix=os.getenv('API_VERSION'))
+logger = logging.getLogger('DB_View')
+
+app = Blueprint('topic', __name__, url_prefix=os.getenv('API_VERSION'))
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -23,38 +24,17 @@ def working():
     return 'working', 200
 
 
-@app.route('/show/<types>', methods=['GET'])
-def show_records(types):
-
-    print(types)
-
-    if types == 'log':
-        return jsonify(logs=[])
-
-    if types == 'cnt':
-        db = FileDB()
-        cnt = db.conn.dequeue_counter
-        return jsonify(dequeue_counter=cnt)
-    abort(400, )
-
-
-@app.route('/get', methods=['GET'])
-def get():
-    index = request.args.get('index')
-    db = FileDB()
-    record = db.get(index)
-    return record or '', 200
-
-
 @app.route('/push', methods=['POST'])
 def push():
     paths = request.form.getlist('path')
     logger.info(paths)
-    db = FileDB()
-    if db.push(paths):
-        return jsonify(data=paths), 200
-    logger.error('could not push urls')
-    abort(400, '')
+    topic = Topic('test')
+    lines = topic.push(paths)
+    try:
+        return lines, 200
+    except Exception as e:
+        logger.error('could not push urls')
+        abort(400, e)
 
 
 @app.route('/create_bucket', methods=['POST'])
