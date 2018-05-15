@@ -4,19 +4,10 @@ import logging
 import os
 
 from app.settings import SETTING
-from app.utils.model_utils import get_last_line, create_file,create_offset_file
+from app.utils.model_utils import get_last_line, create_file, create_offset_file, create_dir
 
 logger = logging.getLogger('DB_Model')
 logger.setLevel(logging.DEBUG)
-
-
-class SingletonType(type):
-    _instance = None
-
-    def __call__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(SingletonType, cls).__call__(*args, **kwargs)
-        return cls._instance
 
 
 class Topic(object):
@@ -31,13 +22,15 @@ class Topic(object):
         cache           : dumped log file
         dequeue_counter : offsets of index by in line
     """
-    _instance = None
 
     def __init__(self, topic: str):
-        self.log_file = create_file(topic, 'log')
+        _dir = create_dir('log/{}'.format(topic))
+        self.log_file = create_file(os.path.join(_dir, 'msg.log'))
+        self.index_file = create_file(os.path.join(_dir, 'index.log'))
+        # self.offsets_file = create_file(os.path.join(_dir, 'offsets.log'))
         self.offsets_file = create_offset_file(topic)
-        self.index_file = create_file(topic, 'index.log')
-        self.ts_file = create_file(topic, 'ts.log')
+
+        self.ts_file = create_file(os.path.join(_dir, 'ts.log'))
         self.load()
 
     def __len__(self):
@@ -78,12 +71,17 @@ class Topic(object):
     def roll_back_commit(self):
         yield
 
-    def commit(self, messages: map) -> list:
+    def commit(self, msgs: list) -> list:
         # todo : rollback
         # self.roll_back_commit(self.offsets,msg)
+        _msgs = map(lambda msg: msg + '\n', self.check_dup(msgs))
+        lines = list(_msgs)
+
+        diff = set(msgs) - set(lines)
+        if diff:
+            print('duplicated messages exist',diff)
+
         with open(self.log_file, 'a') as f:
-            print('add', messages)
-            lines = list(messages)
             f.writelines(lines)
         return lines
 
@@ -92,10 +90,9 @@ class Topic(object):
         self.cache.seek(offset)
         return self.cache.readline()
 
-    def push(self, items):
+    def push(self, msgs):
         """ Add line at the end of data """
-        if not isinstance(items, list):
-            raise TypeError('items is required but got {}'.format(type(items)))
-        lines = map(lambda item: item + '\n', self.check_dup(items))
-        lines = self.commit(lines)
-        return '\n'.join(lines)
+        if not isinstance(msgs, list):
+            raise TypeError('items is required but got {}'.format(type(msgs)))
+        lines = self.commit(msgs)
+        return ''.join(lines)

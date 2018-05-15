@@ -6,7 +6,7 @@ from main import app
 import os
 import base64
 import mock
-from app.utils.utils import get_enckey,decrypt_key
+from app.utils.common import get_enckey,decrypt_key
 from google.cloud import storage
 from app.store.store import Store
 import requests

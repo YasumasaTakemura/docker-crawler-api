@@ -1,7 +1,8 @@
 import os
 import base64
 import logging
-
+from os.path import expanduser
+HOME = expanduser("~")
 
 logger = logging.getLogger('LoggingUnitTest')
 logger.setLevel(logging.INFO)
@@ -18,3 +19,9 @@ def decrypt_key(key):
         logger.error('No Key Passed')
         raise ValueError('No Key Passed')
     return base64.b64decode(key)
+
+
+def islocal():
+    home = os.listdir(HOME)
+    os.environ['local'] = True if '.local' in home else False
+

@@ -5,7 +5,7 @@ from flask import request, Blueprint
 from app.broker.model import Topic
 from app.consumer.model import Consumer
 
-logger = logging.getLogger('DB_View')
+logger = logging.getLogger('ConsumerView')
 app = Blueprint('consumer', __name__, url_prefix=os.getenv('API_VERSION'))
 
 

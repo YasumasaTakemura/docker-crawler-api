@@ -1,47 +1,43 @@
+import logging
 import os
-from os.path import expanduser
-home = expanduser("~")
 
-base_dir = '{}/var/log'.format(home)
+HOME = os.getcwd()
+os.environ['BASE_DIR'] = os.path.join(HOME, 'var')
 
 
-def create_dir():
-    before = ''
-    for path in 'var/log'.split('/'):
-        before += path
-        _dir = os.path.join(home, before)
-        if not os.path.isdir(_dir):
-            print('CREATE')
-            os.mkdir(_dir)
-        before += '/'
+def create_dir(dirname: str):
+    """ create new dir if does not exist """
+    _dir = os.path.join(os.environ['BASE_DIR'], dirname)
+    try:
+        os.makedirs(_dir)
+    except FileExistsError as e:
+        logging.info(e)
+        logging.info(e)
+    return _dir
 
-def create_file(filename, ext):
-    dir = os.path.join(base_dir, filename)
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
-    filename = filename + '/' + '.' + ext
-    filename = os.path.join(base_dir, filename)
-    print(filename)
-    if not os.path.isfile(os.path.join(os.getcwd(), filename)):
+
+def create_file(filename):
+    filename = os.path.join(os.environ['BASE_DIR'], filename)
+    if not os.path.isfile(filename):
         with open(filename, 'w'):
             # just create empty file
-            print('CREATE_FILE')
-            pass
+            logging.info('FILE_CREATED')
     return filename
 
 
-def create_offset_file(topic):
-    dir = os.path.join(base_dir, topic)
+def create_offset_file(topic, _dir='log'):
+    topic_path = os.path.join(_dir, topic)
+    dir = os.path.join(os.environ['BASE_DIR'], topic_path)
     if not os.path.isdir(dir):
         os.mkdir(dir)
-    filename = os.path.join(dir, '.offsets')
+    filename = os.path.join(dir, 'offsets.log')
     if os.path.isfile(filename):
         return filename
     initial_val = "0"
     with open(filename, 'w') as f:
         f.write(initial_val)
-    print('=========')
-    print(filename)
+    with open(filename) as f:
+        logging.info(f.read())
     return filename
 
 
