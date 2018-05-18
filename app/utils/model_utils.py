@@ -25,19 +25,24 @@ def create_file(filename):
     return filename
 
 
-def create_offset_file(topic, _dir='log'):
-    topic_path = os.path.join(_dir, topic)
-    dir = os.path.join(os.environ['BASE_DIR'], topic_path)
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
-    filename = os.path.join(dir, 'offsets.log')
-    if os.path.isfile(filename):
-        return filename
+# def create_offset_file(topic, _dir='log'):
+def create_offset_file(topic_dir:str):
+    """create offset file"""
+    # topic_path = os.path.join(_dir, topic)
+    # dir = os.path.join(os.environ['BASE_DIR'], topic_path)
+    # filename = os.path.join(dir, 'offsets.log')
+    filename = os.path.join(os.environ['BASE_DIR'], os.path.join(topic_dir,'offsets.log'))
     initial_val = "0"
+
+    # check existence of topic dir and number in file
+    if os.path.isfile(filename):
+        with open(filename) as f:
+            val = f.read()
+        if val.isdigit():
+            return filename
+
     with open(filename, 'w') as f:
         f.write(initial_val)
-    with open(filename) as f:
-        logging.info(f.read())
     return filename
 
 

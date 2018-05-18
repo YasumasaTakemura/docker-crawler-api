@@ -24,13 +24,11 @@ class Topic(object):
     """
 
     def __init__(self, topic: str):
-        _dir = create_dir('log/{}'.format(topic))
-        self.log_file = create_file(os.path.join(_dir, 'msg.log'))
-        self.index_file = create_file(os.path.join(_dir, 'index.log'))
-        # self.offsets_file = create_file(os.path.join(_dir, 'offsets.log'))
-        self.offsets_file = create_offset_file(topic)
-
-        self.ts_file = create_file(os.path.join(_dir, 'ts.log'))
+        topic_dir = create_dir('log/{}'.format(topic))
+        self.log_file = create_file(os.path.join(topic_dir, 'msg.log'))
+        self.index_file = create_file(os.path.join(topic_dir, 'index.log'))
+        self.offsets_file = create_offset_file(topic_dir)
+        self.ts_file = create_file(os.path.join(topic_dir, 'ts.log'))
         self.load()
 
     def __len__(self):
