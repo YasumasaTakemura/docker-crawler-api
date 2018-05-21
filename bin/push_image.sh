@@ -2,7 +2,7 @@
 set -e
 
 flg=$#
-ENV=dev
+ENV=latest
 
 usage_exit() {
         if [  $flg -eq  0 ] || [ -z $SOURCE_IMAGE ];then
