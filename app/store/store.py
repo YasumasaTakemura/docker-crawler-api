@@ -5,6 +5,7 @@ from flask import abort
 from google.api_core.exceptions import Conflict
 import bz2
 import logging
+from io import BytesIO
 
 logger = logging.getLogger('Store_model')
 
@@ -87,9 +88,36 @@ class Store(object):
         except Exception as e:
             logger.error(e)
 
-    def read(self, bucket_name, enc_key, filename):
+    def get_blob(self, bucket_name, filename, enc_key=None):
         bucket = self.client.get_bucket(bucket_name)
-        encryption_key = base64.b64decode(enc_key)
-        blob = storage.Blob(filename, bucket, encryption_key=encryption_key)
-        data = blob.download_to_filename(filename)
-        return bz2.decompress(data)
+        if enc_key:
+            enc_key = base64.b64decode(enc_key)
+        return storage.Blob(filename, bucket, encryption_key=enc_key)
+
+    def read(self, bucket_name, filename, enc_key=None):
+        """ read file as string """
+        blob = self.get_blob(bucket_name, filename, enc_key)
+        string_buffer = BytesIO()
+        blob.download_to_file(string_buffer)
+        try:
+            data = string_buffer.getvalue()
+            data = bz2.decompress(data).decode()
+        except Exception as e:
+            logging.error(e)
+            raise e
+        return data
+
+    def read_as_file(self, bucket_name, filename, enc_key=None):
+        """ read and save file """
+        data = self.read(bucket_name, filename, enc_key=enc_key)
+        self._write_file(data, filename)
+
+    def _write_file(self, data, filename):
+        filename += '.html'
+        with open(filename, 'w') as f:
+            f.write(data)
+
+    def decomp(self, filename):
+        with open(filename, 'rb') as f:
+            data = f.read()
+        return bz2.decompress(data).decode()

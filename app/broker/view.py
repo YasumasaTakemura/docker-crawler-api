@@ -37,6 +37,19 @@ def push():
         abort(400, e)
 
 
+@app.route('/read', methods=['POST'])
+def read():
+    filename = request.form.get('filename')
+    bucket = os.getenv('BUCKET_NAME')
+    store = Store()
+    try:
+        data = store.read_as_file(bucket, filename)
+        return data or '', 200
+    except Exception as e:
+        logger.error('bucket was not created')
+        abort(400, e)
+
+
 @app.route('/create_bucket', methods=['POST'])
 def create_bucket():
     bucket_name = request.form.get('bucket_name')
