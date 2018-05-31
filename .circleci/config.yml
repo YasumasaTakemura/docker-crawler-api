@@ -5,13 +5,26 @@ jobs:
       - image: google/cloud-sdk:latest
     steps:
       - checkout
-      - run: echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
-      - run: gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-      - run: gcloud config set project $PROJECT_ID
-      - run: chmod 500 bin/deploy.sh
-      - run: chmod 500 bin/kms.sh
-      - run: bin/kms.sh d
-      - run: bin/deploy.sh
+#      - run: echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
+#      - run: gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+#      - run: gcloud config set project $PROJECT_ID
+#      - run: chmod 500 bin/kms.sh
+#      - run: chmod 500 bin/push_image.sh
+#      - run: chmod 500 bin/deploy.sh
+#      - run: bin/kms.sh d
+#      - run: bin/push_image.sh
+#      - run: bin/deploy.sh
+      
+      - run: |
+          echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
+          gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+          gcloud config set project $PROJECT_ID
+          chmod 500 bin/kms.sh
+          chmod 500 bin/push_image.sh
+          chmod 500 bin/deploy.sh
+          bin/kms.sh d
+          bin/push_image.sh
+          bin/deploy.sh
 
 
 workflows:
