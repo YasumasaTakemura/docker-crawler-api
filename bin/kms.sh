@@ -16,5 +16,5 @@ gcloud kms $type \
     --location=global \
     --keyring=my-key-ring \
     --key=my-key \
-    --ciphertext-file=env/.env.enc \
-    --plaintext-file=env/.env
+    --ciphertext-file=$ciphertext \
+    --plaintext-file=$plaintext
