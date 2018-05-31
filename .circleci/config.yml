@@ -11,7 +11,7 @@ jobs:
       - run: chmod 500 bin/kms.sh
       - run: chmod 500 bin/push_image.sh
       - run: chmod 500 bin/deploy.sh
-#      - run: bin/kms.sh d
+      - run: bin/kms.sh d
       - run: bin/deploy.sh
 
 
