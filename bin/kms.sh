@@ -3,8 +3,8 @@ set -e
 
 flag=$1
 type=encrypt
-plaintext=env/.env
-ciphertext=env/.env.enc
+plaintext="./env/.env"
+ciphertext="./env/.env.enc"
 
 # decrypt
 if [ "${flag}" = "d" ];then
