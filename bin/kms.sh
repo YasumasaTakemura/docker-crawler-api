@@ -15,8 +15,8 @@ fi
 echo $type
 
 gcloud kms $type \
-    --location=global \
-    --keyring=my-key-ring \
-    --key=my-key \
-    --ciphertext-file=$ciphertext \
-    --plaintext-file=$plaintext
+    --location="global" \
+    --keyring="my-key-ring" \
+    --key="my-key" \
+    --ciphertext-file=${ciphertext} \
+    --plaintext-file=${plaintext}
