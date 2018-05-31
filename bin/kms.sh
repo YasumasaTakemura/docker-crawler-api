@@ -3,18 +3,18 @@ set -e
 
 flag=$1
 type=encrypt
-plaintext=$PWD/env/.env
-ciphertext=$PWD/env/.env.enc
+plaintext=env/.env
+ciphertext=env/.env.enc
 
 # decrypt
 if [ "${flag}" = "d" ];then
     type=decrypt && \
-    touch $PWD/env/.env
+    touch env/.env
 fi
 
 gcloud kms $type \
     --location=global \
     --keyring=my-key-ring \
     --key=my-key \
-    --ciphertext-file=$PWD/env/.env.enc \
-    --plaintext-file=$PWD/env/.env
+    --ciphertext-file=env/.env.enc \
+    --plaintext-file=env/.env
