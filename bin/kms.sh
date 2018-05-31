@@ -12,6 +12,8 @@ if [ "${flag}" = "d" ];then
     touch env/.env
 fi
 
+echo $type
+
 gcloud kms $type \
     --location=global \
     --keyring=my-key-ring \
