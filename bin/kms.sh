@@ -14,7 +14,7 @@ fi
 
 echo $type
 
-gcloud kms $type \
+gcloud kms ${type} \
     --location="global" \
     --keyring="my-key-ring" \
     --key="my-key" \
