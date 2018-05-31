@@ -12,15 +12,11 @@ logger.setLevel(logging.DEBUG)
 
 class Topic(object):
     """
-    This class a extension of Generator which will have len() and get(), and a SINGLETON to manage url queues
-    - Data structure of file needs to be CSV or TSV
-
     Member props:
         log_file       : file path
-        size            : file size(counts of log file)
-        index_table     : key for line index, value for offsets from top which seek(0,0)
-        cache           : dumped log file
-        dequeue_counter : offsets of index by in line
+        index_file      : pointer of records
+        offsets_file    : offsets
+        ts_file         : timestamp when /get called
     """
 
     def __init__(self, topic: str):
@@ -67,7 +63,8 @@ class Topic(object):
         return lines_no_dup
 
     def roll_back_commit(self):
-        yield
+        """NotImplementedYet"""
+        pass
 
     def commit(self, msgs: list) -> list:
         # todo : rollback
@@ -77,8 +74,7 @@ class Topic(object):
 
         diff = set(msgs) - set(lines)
         if diff:
-            print('duplicated messages exist',diff)
-
+            logging.error('duplicated messages exist',diff)
         with open(self.log_file, 'a') as f:
             f.writelines(lines)
         return lines

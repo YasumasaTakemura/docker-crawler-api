@@ -6,6 +6,8 @@ from google.api_core.exceptions import Conflict
 import bz2
 import logging
 from io import BytesIO
+import os
+from datetime import datetime
 
 logger = logging.getLogger('Store_model')
 
@@ -121,3 +123,11 @@ class Store(object):
         with open(filename, 'rb') as f:
             data = f.read()
         return bz2.decompress(data).decode()
+
+    def buck_up(self, dirname: str, filename: str):
+        assert os.getenv('BUCKUP_DIR')
+        bucket_name = os.getenv('BUCKUP_DIR') + dirname
+        with open(filename) as f:
+            data = f.read()
+        filename += '_' + datetime.now().strftime('%Y-%m-%d')
+        self.write(bucket_name, filename, data, enc_key=None)
