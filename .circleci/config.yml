@@ -9,6 +9,7 @@ jobs:
             name: deploy api
             command: |
                 which docker
+                systemctl start docker
                 echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
                 cat  ${HOME}/gcloud-service-key.json
                 gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
