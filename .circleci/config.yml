@@ -1,8 +1,9 @@
 version: 2
 jobs:
   build:
-    docker:
-      - image: google/cloud-sdk:latest
+    pre:
+      - pyenv global 2.7.12
+
     steps:
       - checkout
       - run:
