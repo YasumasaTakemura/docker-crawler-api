@@ -10,11 +10,13 @@ jobs:
       - run: gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
       - run: echo $PROJECT_ID
       - run: gcloud config set project $PROJECT_ID
+      - run: ls -al
       - run: ls -al bin/
       - run: ls -al env/
       - run: chmod 500 bin/deploy.sh
       - run: chmod 500 bin/kms.sh
-      - run: bin/kms.sh d
+      - run: gcloud kms decrypt --location=global --keyring=my-key-ring --key=my-key
+#      - run: bin/kms.sh d
 #      - run: bin/deploy.sh
 
 workflows:
