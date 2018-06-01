@@ -94,9 +94,24 @@ workflows:
     jobs:
       - prepare:
           context: GCP
-#      - production:
-#          context: GCP
+      - production:
+          context: GCP
+          requires:
+            - package
+          filters:
+            tags:
+              only: /.*/
       - staging:
           context: GCP
+          requires:
+            - package
 #      - development:
 #          context: GCP
+#      - deploy:
+#          requires:
+#            - package
+#          filters:
+#            tags:
+#              only: /.*/
+#            branches:
+#              ignore: /.*/
