@@ -96,7 +96,7 @@ workflows:
           context: GCP
 #      - production:
 #          context: GCP
-#      - staging:
-#          context: GCP
+      - staging:
+          context: GCP
 #      - development:
 #          context: GCP
