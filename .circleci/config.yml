@@ -17,7 +17,7 @@ jobs:
                 chmod 500 bin/psuh_image.sh
                 chmod 500 bin/deploy.sh
                 bin/kms.sh d
-                bin/psuh_image.sh
+                bin/push_image.sh
                 bin/deploy.sh
 
 workflows:
