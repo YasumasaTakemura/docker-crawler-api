@@ -16,8 +16,10 @@ jobs:
       - run:  chmod 500 bin/deploy.sh
       - run:  chmod 500 bin/kms.sh
       - run:  cp env/.env.enc  ./
+      - run:  cp mv .env.enc env.enc
+      - run:  touch env
       - run:  ls -al
-      - run:  gcloud kms decrypt --location=global --keyring=my-key-ring --key=my-key --ciphertext-file=env/.env.enc --plaintext-file=$PWD/env/.env
+      - run:  gcloud kms decrypt --location=global --keyring=my-key-ring --key=my-key --ciphertext-file=env.enc --plaintext-file=env
 #      - run: bin/kms.sh d
 #      - run: bin/deploy.sh
 
