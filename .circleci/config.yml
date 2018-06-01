@@ -10,6 +10,8 @@ jobs:
             name: deploy api
             command: |
                 which docker
+                ls -al
+                docker ps
                 docker version
                 echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
                 cat  ${HOME}/gcloud-service-key.json
@@ -21,6 +23,7 @@ jobs:
                 chmod 500 bin/deploy.sh
                 ls -al
                 bin/kms.sh d
+                ls -al env
                 bin/push_image.sh
                 bin/deploy.sh
 
