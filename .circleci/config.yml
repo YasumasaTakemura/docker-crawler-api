@@ -1,5 +1,5 @@
 version: 2
-jobs:
+deployment:
   prodaction:
     branch: master
     tag: /v[0-9]+(\.[0-9]+)*/
@@ -20,9 +20,9 @@ jobs:
                 chmod 500 bin/kms.sh
                 chmod 500 bin/push_image.sh
                 chmod 500 bin/deploy.sh
-                bin/kms.sh d && \
-                bin/push_image.sh && \
-                bin/deploy.sh
+#                bin/kms.sh d && \
+#                bin/push_image.sh && \
+#                bin/deploy.sh
   staging:
     branch: master
     docker:
@@ -42,9 +42,9 @@ jobs:
                 chmod 500 bin/kms.sh
                 chmod 500 bin/push_image.sh
                 chmod 500 bin/deploy.sh
-                bin/kms.sh d && \
-                bin/push_image.sh && \
-                bin/deploy.sh
+#                bin/kms.sh d && \
+#                bin/push_image.sh && \
+#                bin/deploy.sh
   development:
     branch: develop
     docker:
@@ -64,14 +64,14 @@ jobs:
                 chmod 500 bin/kms.sh
                 chmod 500 bin/push_image.sh
                 chmod 500 bin/deploy.sh
-                bin/kms.sh d && \
-                bin/push_image.sh && \
-                bin/deploy.sh
+#                bin/kms.sh d && \
+#                bin/push_image.sh && \
+#                bin/deploy.sh
 
 workflows:
   version: 2
   my-workflow:
-    jobs:
+    deployment:
       - prodaction:
           context: GCP
       - staging:
