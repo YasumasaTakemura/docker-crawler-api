@@ -1,7 +1,0 @@
-url -X POST -d "path=http://test.com/aaaaa" -d "path=http://test.com/aa" \
--d "path=http://test.com/bb" \
--d "path=http://test.com/ccc" \
--d "path=http://test.com/dddd" \
--d "path=http://test.com/fffffff" \
--d "path=http://test.com/gggggggg" \
- localhost:8080/v2/push
