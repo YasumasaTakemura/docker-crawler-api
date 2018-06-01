@@ -19,7 +19,7 @@ jobs:
       - run:  mv .env.enc env.enc
       - run:  touch env.env
       - run:  ls -al
-      - run:  gcloud kms decrypt --location=global --keyring=my-key-ring --key=my-key --ciphertext-file=env.enc --plaintext-file=env.env
+      - run:  gcloud kms decrypt --location=global --keyring=my-key-ring --key=my-key --ciphertext-file=env/.env.enc --plaintext-file=env.env
 #      - run: bin/kms.sh d
 #      - run: bin/deploy.sh
 
