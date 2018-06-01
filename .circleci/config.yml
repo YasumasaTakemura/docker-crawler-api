@@ -23,8 +23,9 @@ jobs:
                 chmod 500 bin/deploy.sh
                 ls -al
                 bin/kms.sh d && \
-                bin/push_image.sh && \
+#                bin/push_image.sh && \
                 ls -al env
+                cat env/.env
                 bin/deploy.sh
 
 workflows:
