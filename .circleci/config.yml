@@ -14,11 +14,12 @@ jobs:
       - run: chmod 500 bin/deploy.sh
       - run: chmod 500 bin/kms.sh
       - run: gcloud compute instance-groups managed list
+      - run: touch env/.env
       - run: ls -al
       - run: ls -al bin/
-      - run: touch env/.env
+      - run: ls -al env/
 
-      - run: gcloud kms decrypt --location=global --keyring=my-key-ring --key=my-key --ciphertext-file=env/.env.enc --plaintext-file=env/.env
+      - run: gcloud kms decrypt --location=global --keyring=my-key-ring --key=my-key --ciphertext-file="env/.env.enc" --plaintext-file="env/.env"
 #      - run: bin/kms.sh d
 #      - run: bin/deploy.sh
 
