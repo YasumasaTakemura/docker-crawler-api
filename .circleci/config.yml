@@ -19,8 +19,12 @@ jobs:
                 chmod 500 bin/push_image.sh
                 chmod 500 bin/deploy.sh
   production:
-    branch: master
-    tag: /v[0-9]+(\.[0-9]+)*/
+    branches:
+      only:
+        - master
+    tags:
+      only:
+        - /v[0-9]+(\.[0-9]+)*/
     docker:
       - image: google/cloud-sdk:latest
     environment:
@@ -42,7 +46,9 @@ jobs:
 #                bin/push_image.sh && \
 #                bin/deploy.sh
   staging:
-    branch: master
+    branches:
+      only:
+        - master
     docker:
       - image: google/cloud-sdk:latest
     environment:
@@ -64,7 +70,9 @@ jobs:
 #                bin/push_image.sh && \
 #                bin/deploy.sh
   development:
-    branch: develop
+    branches:
+      only:
+        - develop
     docker:
       - image: google/cloud-sdk:latest
     environment:
@@ -90,21 +98,11 @@ workflows:
   version: 2
   my-workflow:
     jobs:
-      - prepare
-      - prodaction:
+      - prepare:
           context: GCP
-            requires:
-              - prepare
-            filters: # developブランチの場合のみデプロイする
-              branches:
-                only: master
+      - production:
+          context: GCP
       - staging:
           context: GCP
-            filters: # developブランチの場合のみデプロイする
-              branches:
-                only: master
       - development:
           context: GCP
-            filters: # developブランチの場合のみデプロイする
-              branches:
-                only: devlopment
