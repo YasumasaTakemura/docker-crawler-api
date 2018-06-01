@@ -46,9 +46,9 @@ jobs:
 #                bin/push_image.sh && \
 #                bin/deploy.sh
   staging:
-    branches:
-      only:
-        - master
+#    branches:
+#      only:
+#        - master
     docker:
       - image: google/cloud-sdk:latest
     environment:
@@ -100,9 +100,9 @@ workflows:
     jobs:
       - prepare:
           context: GCP
-      - production:
-          context: GCP
-      - staging:
-          context: GCP
-      - development:
-          context: GCP
+#      - production:
+#          context: GCP
+#      - staging:
+#          context: GCP
+#      - development:
+#          context: GCP
