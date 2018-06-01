@@ -1,9 +1,8 @@
 version: 2
 jobs:
   build:
-    pre:
-      - pyenv global 2.7.12
-
+    docker:
+      - image: circleci/python:2.7
     steps:
       - checkout
       - run:
