@@ -10,10 +10,12 @@ jobs:
       - run: gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
       - run: echo $PROJECT_ID
       - run: gcloud config set project $PROJECT_ID
-      - run: chmod 500 bin/deploy.sh
       - run: chmod 500 bin/kms.sh
+      - run: chmod 500 bin/psuh_image.sh
+      - run: chmod 500 bin/deploy.sh
       - run: bin/kms.sh d
-#      - run: bin/deploy.sh
+      - run: bin/psuh_image.sh
+      - run: bin/deploy.sh
 
 workflows:
   version: 2
