@@ -44,9 +44,7 @@ jobs:
 #                bin/push_image.sh && \
 #                bin/deploy.sh
   staging:
-#    branches:
-#      only:
-#        - master
+
     docker:
       - image: google/cloud-sdk:latest
     environment:
@@ -64,9 +62,7 @@ jobs:
                 chmod 500 bin/kms.sh
                 chmod 500 bin/push_image.sh
                 chmod 500 bin/deploy.sh
-#                bin/kms.sh d && \
-#                bin/push_image.sh && \
-#                bin/deploy.sh
+
   development:
     branches:
       only:
