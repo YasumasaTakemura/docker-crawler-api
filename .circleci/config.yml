@@ -1,5 +1,23 @@
 version: 2
 jobs:
+  prepare:
+    docker:
+      - image: google/cloud-sdk:latest
+    environment:
+        ENV: PROD
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+            name: deploy api
+            command: |
+                echo "===========Deploy As prodaction enviroment==========="
+                echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
+                gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+                gcloud config set project $PROJECT_ID
+                chmod 500 bin/xkms.sh
+                chmod 500 bin/push_image.sh
+                chmod 500 bin/deploy.sh
   production:
     branch: master
     tag: /v[0-9]+(\.[0-9]+)*/
@@ -72,19 +90,21 @@ workflows:
   version: 2
   my-workflow:
     jobs:
+      - prepare
       - prodaction:
           context: GCP
             requires:
+              - prepare
             filters: # developブランチの場合のみデプロイする
-            branches:
-              only: master
+              branches:
+                only: master
       - staging:
           context: GCP
             filters: # developブランチの場合のみデプロイする
-            branches:
-              only: master
+              branches:
+                only: master
       - development:
           context: GCP
-          filters: # developブランチの場合のみデプロイする
-            branches:
-              only: develop
+            filters: # developブランチの場合のみデプロイする
+              branches:
+                only: devlopment
