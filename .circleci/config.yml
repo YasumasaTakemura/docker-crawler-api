@@ -14,7 +14,7 @@ jobs:
                 echo $PROJECT_ID
                 gcloud config set project $PROJECT_ID
                 chmod 500 bin/kms.sh
-                chmod 500 bin/psuh_image.sh
+                chmod 500 bin/push_image.sh
                 chmod 500 bin/deploy.sh
                 bin/kms.sh d
                 bin/push_image.sh
