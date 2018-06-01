@@ -1,8 +1,9 @@
 version: 2
 jobs:
   build:
+    machine: true
     docker:
-      - image: circleci/python:2.7
+      - image: google/cloud-sdk:latest
     steps:
       - checkout
       - run:
