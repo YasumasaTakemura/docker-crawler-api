@@ -5,17 +5,19 @@ jobs:
       - image: google/cloud-sdk:latest
     steps:
       - checkout
-      - run: echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
-      - run: cat  ${HOME}/gcloud-service-key.json
-      - run: gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-      - run: echo $PROJECT_ID
-      - run: gcloud config set project $PROJECT_ID
-      - run: ls -al
-      - run: ls -al bin/
-      - run: ls -al env/
-      - run: chmod 500 bin/deploy.sh
-      - run: chmod 500 bin/kms.sh
-      - run: gcloud kms decrypt --location=global --keyring=my-key-ring --key=my-key --ciphertext-file=$PWD/env/.env.enc --plaintext-file=$PWD/env/.env
+      - run:  echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
+      - run:  cat  ${HOME}/gcloud-service-key.json
+      - run:  gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+      - run:  echo $PROJECT_ID
+      - run:  gcloud config set project $PROJECT_ID
+      - run:  ls -al
+      - run:  ls -al bin/
+      - run:  ls -al env/
+      - run:  chmod 500 bin/deploy.sh
+      - run:  chmod 500 bin/kms.sh
+      - run:  cp env/.env.enc  ./
+      - run:  ls -al
+      - run:  gcloud kms decrypt --location=global --keyring=my-key-ring --key=my-key --ciphertext-file=env/.env.enc --plaintext-file=$PWD/env/.env
 #      - run: bin/kms.sh d
 #      - run: bin/deploy.sh
 
