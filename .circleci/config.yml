@@ -1,7 +1,6 @@
 version: 2
 jobs:
   build:
-    machine: true
     docker:
       - image: google/cloud-sdk:latest
     steps:
@@ -9,6 +8,7 @@ jobs:
       - run:
             name: deploy api
             command: |
+                which docker
                 echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
                 cat  ${HOME}/gcloud-service-key.json
                 gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
