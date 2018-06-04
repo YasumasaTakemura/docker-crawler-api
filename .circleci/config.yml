@@ -11,7 +11,7 @@ jobs:
       - run:
             name: deploy api
             command: |
-                echo "===========Deploy As $ENV enviroment==========="
+                echo "===========Deploy As Prepare enviroment==========="
                 echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
                 gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
                 gcloud config set project $PROJECT_ID
@@ -55,7 +55,7 @@ jobs:
       - run:
             name: deploy api
             command: |
-                echo "===========Deploy As $ENV enviroment==========="
+                echo "===========Deploy As staging enviroment==========="
                 echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
                 gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
                 gcloud config set project $PROJECT_ID
