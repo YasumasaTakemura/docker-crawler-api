@@ -94,7 +94,7 @@ workflows:
     jobs:
       - prepare:
           context: GCP
-      - production:
-          context: GCP
-      - staging:
-          context: GCP
+#      - production:
+#          context: GCP
+#      - staging:
+#          context: GCP
