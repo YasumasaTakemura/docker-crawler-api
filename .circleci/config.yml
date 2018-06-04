@@ -20,9 +20,9 @@ jobs:
     branches:
       only:
         - master
-    tags:
-      only:
-        - /v[0-9]+(\.[0-9]+)*/
+#    tags:
+#      only:
+#        - /v[0-9]+(\.[0-9]+)*/
     docker:
       - image: google/cloud-sdk:latest
     environment:
