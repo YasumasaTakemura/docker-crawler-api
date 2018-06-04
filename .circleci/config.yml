@@ -16,77 +16,77 @@ jobs:
                 gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
                 gcloud config set project $PROJECT_ID
 
-  production:
-    branches:
-      only:
-        - master
-#    tags:
+#  production:
+#    branches:
 #      only:
-#        - /v[0-9]+(\.[0-9]+)*/
-    docker:
-      - image: google/cloud-sdk:latest
-    environment:
-        ENV: PROD
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-            name: deploy api
-            command: |
-                echo "===========Deploy As production enviroment==========="
-                echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
-                gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-                gcloud config set project $PROJECT_ID
-                chmod 500 bin/kms.sh
-                chmod 500 bin/push_image.sh
-                chmod 500 bin/deploy.sh
-#                bin/kms.sh d && \
-#                bin/push_image.sh && \
-#                bin/deploy.sh
-  staging:
-
-    docker:
-      - image: google/cloud-sdk:latest
-    environment:
-        ENV: STD
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-            name: deploy api
-            command: |
-                echo "===========Deploy As staging enviroment==========="
-                echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
-                gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-                gcloud config set project $PROJECT_ID
-                chmod 500 bin/kms.sh
-                chmod 500 bin/push_image.sh
-                chmod 500 bin/deploy.sh
-
-  development:
-    branches:
-      only:
-        - develop
-    docker:
-      - image: google/cloud-sdk:latest
-    environment:
-        ENV: DEV
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-            name: deploy api
-            command: |
-                echo "===========Deploy As development enviroment==========="
-                echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
-                gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-                gcloud config set project $PROJECT_ID
-                chmod 500 bin/kms.sh
-                chmod 500 bin/push_image.sh
-                chmod 500 bin/deploy.sh
-#                bin/kms.sh d && \
-#                bin/push_image.sh && \
-#                bin/deploy.sh
+#        - master
+##    tags:
+##      only:
+##        - /v[0-9]+(\.[0-9]+)*/
+#    docker:
+#      - image: google/cloud-sdk:latest
+#    environment:
+#        ENV: PROD
+#    steps:
+#      - checkout
+#      - setup_remote_docker
+#      - run:
+#            name: deploy api
+#            command: |
+#                echo "===========Deploy As production enviroment==========="
+#                echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
+#                gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+#                gcloud config set project $PROJECT_ID
+#                chmod 500 bin/kms.sh
+#                chmod 500 bin/push_image.sh
+#                chmod 500 bin/deploy.sh
+##                bin/kms.sh d && \
+##                bin/push_image.sh && \
+##                bin/deploy.sh
+#  staging:
+#
+#    docker:
+#      - image: google/cloud-sdk:latest
+#    environment:
+#        ENV: STD
+#    steps:
+#      - checkout
+#      - setup_remote_docker
+#      - run:
+#            name: deploy api
+#            command: |
+#                echo "===========Deploy As staging enviroment==========="
+#                echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
+#                gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+#                gcloud config set project $PROJECT_ID
+#                chmod 500 bin/kms.sh
+#                chmod 500 bin/push_image.sh
+#                chmod 500 bin/deploy.sh
+#
+#  development:
+#    branches:
+#      only:
+#        - develop
+#    docker:
+#      - image: google/cloud-sdk:latest
+#    environment:
+#        ENV: DEV
+#    steps:
+#      - checkout
+#      - setup_remote_docker
+#      - run:
+#            name: deploy api
+#            command: |
+#                echo "===========Deploy As development enviroment==========="
+#                echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
+#                gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+#                gcloud config set project $PROJECT_ID
+#                chmod 500 bin/kms.sh
+#                chmod 500 bin/push_image.sh
+#                chmod 500 bin/deploy.sh
+##                bin/kms.sh d && \
+##                bin/push_image.sh && \
+##                bin/deploy.sh
 
 workflows:
   version: 2
@@ -96,22 +96,5 @@ workflows:
           context: GCP
       - production:
           context: GCP
-#          requires:
-#            - package
-#          filters:
-#            tags:
-#              only: /.*/
       - staging:
           context: GCP
-#          requires:
-#            - package
-#      - development:
-#          context: GCP
-#      - deploy:
-#          requires:
-#            - package
-#          filters:
-#            tags:
-#              only: /.*/
-#            branches:
-#              ignore: /.*/
