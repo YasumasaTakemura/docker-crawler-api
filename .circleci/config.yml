@@ -96,15 +96,15 @@ workflows:
           context: GCP
       - production:
           context: GCP
-          requires:
-            - package
-          filters:
-            tags:
-              only: /.*/
+#          requires:
+#            - package
+#          filters:
+#            tags:
+#              only: /.*/
       - staging:
           context: GCP
-          requires:
-            - package
+#          requires:
+#            - package
 #      - development:
 #          context: GCP
 #      - deploy:
