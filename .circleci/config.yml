@@ -44,7 +44,7 @@ jobs:
         ENV: DEV
     steps:
       - checkout
-#      - setup_remote_docker
+      - setup_remote_docker
       - run:
             name: deploy_api
             command: |
@@ -69,7 +69,6 @@ workflows:
               only:
                 - master
       - prod_deploy:
-          context: GCP
           requires:
             - prepare
           filters:
@@ -84,7 +83,6 @@ workflows:
               only:
                 - feature/dev
       - development:
-          context: GCP
           requires:
             - prepare
           filters:
