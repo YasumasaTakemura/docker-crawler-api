@@ -3,24 +3,31 @@ jobs:
   prepare:
     docker:
       - image: google/cloud-sdk:latest
+    environment:
+        ENV: TEST
     steps:
       - checkout
       - setup_remote_docker
       - run:
             name: deploy api
             command: |
-                echo "===========Deploy As $ENV enviroment==========="
-                cat /root/gcloud-service-key.json
+                echo "===========Deploy As ${ENV} enviroment==========="
+                echo $ACCT_AUTH
                 echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
                 gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
                 gcloud config set project $PROJECT_ID
 
+
   prod_deploy:
+    branch: master
     docker:
       - image: circleci/python:3.6.4
+    environment:
+        ENV: PROD
     steps:
       - checkout
       - run: echo Deploying production...
+
 
   staging_deploy:
     docker:
@@ -30,13 +37,14 @@ jobs:
       - run: echo Deploying staging...
 
   development:
+    branch: feature/dev
     docker:
       - image: google/cloud-sdk:latest
     environment:
         ENV: DEV
     steps:
       - checkout
-      - setup_remote_docker
+#      - setup_remote_docker
       - run:
             name: deploy_api
             command: |
@@ -46,6 +54,7 @@ jobs:
                 chmod 500 bin/kms.sh
                 chmod 500 bin/push_image.sh
                 echo -------------------------
+
 
 
 workflows:
