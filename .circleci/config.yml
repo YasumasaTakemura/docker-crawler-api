@@ -10,6 +10,7 @@ jobs:
             name: deploy api
             command: |
                 echo "===========Deploy As $ENV enviroment==========="
+                cat /root/gcloud-service-key.json
                 echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
                 gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
                 gcloud config set project $PROJECT_ID
