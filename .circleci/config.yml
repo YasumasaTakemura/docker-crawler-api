@@ -61,7 +61,11 @@ workflows:
   version: 2
   prod-build-and-deploy:
     jobs:
-      - prepare
+      - prepare:
+          filters:
+            branches:
+              only:
+                - master
       - prod_deploy:
           context: GCP
           requires:
@@ -72,7 +76,11 @@ workflows:
                 - master
   development:
     jobs:
-      - prepare
+      - prepare:
+          filters:
+            branches:
+              only:
+                - feature/dev
       - development:
           context: GCP
           requires:
