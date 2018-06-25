@@ -49,7 +49,7 @@ jobs:
             name: deploy_api
             command: |
                 echo "===========Deploy As ${ENV} enviroment==========="
-                echo -------------------------
+                echo ---------------------------
                 echo $ENV
                 chmod 500 bin/kms.sh
                 chmod 500 bin/push_image.sh
