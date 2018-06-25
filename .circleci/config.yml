@@ -53,6 +53,8 @@ jobs:
                 echo $ENV
                 chmod 500 bin/kms.sh
                 chmod 500 bin/push_image.sh
+                bin/kms.sh d
+                bin/push_image.sh
                 echo ---------------------------
 
 
