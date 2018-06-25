@@ -1,35 +1,71 @@
 version: 2
 jobs:
-  build:
+  prepare:
     docker:
       - image: google/cloud-sdk:latest
     steps:
       - checkout
-#      - run: echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
-#      - run: gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-#      - run: gcloud config set project $PROJECT_ID
-#      - run: chmod 500 bin/kms.sh
-#      - run: chmod 500 bin/push_image.sh
-#      - run: chmod 500 bin/deploy.sh
-#      - run: bin/kms.sh d
-#      - run: bin/push_image.sh
-#      - run: bin/deploy.sh
-      
-      - run: |
-          echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
-          gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-          gcloud config set project $PROJECT_ID
-          chmod 500 bin/kms.sh
-          chmod 500 bin/push_image.sh
-          chmod 500 bin/deploy.sh
-          bin/kms.sh d
-          bin/push_image.sh
-          bin/deploy.sh
+      - setup_remote_docker
+      - run:
+            name: deploy api
+            command: |
+                echo "===========Deploy As $ENV enviroment==========="
+                echo $ACCT_AUTH | base64 -d > ${HOME}/gcloud-service-key.json
+                gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+                gcloud config set project $PROJECT_ID
+
+  prod_deploy:
+    docker:
+      - image: circleci/python:3.6.4
+    steps:
+      - checkout
+      - run: echo Deploying production...
+
+  staging_deploy:
+    docker:
+      - image: circleci/python:3.6.4
+    steps:
+      - checkout
+      - run: echo Deploying staging...
+
+  development:
+    docker:
+      - image: google/cloud-sdk:latest
+    environment:
+        ENV: DEV
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+            name: deploy_api
+            command: |
+                echo "===========Deploy As ${ENV} enviroment==========="
+                echo -------------------------
+                echo $ENV
+                chmod 500 bin/kms.sh
+                chmod 500 bin/push_image.sh
+                echo -------------------------
 
 
 workflows:
   version: 2
-  my-workflow:
+  prod-build-and-deploy:
     jobs:
-      - build:
-          context: GCP
+      - prepare
+      - prod_deploy:
+          requires:
+            - prepare
+          filters:
+            branches:
+              only:
+                - master
+  development:
+    jobs:
+      - prepare
+      - development:
+          requires:
+            - prepare
+          filters:
+            branches:
+              only:
+                - feature/dev
